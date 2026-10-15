@@ -15,6 +15,11 @@ const seed: Tx[] = [
   { id: "t8", direction: "outgoing", amount: 100, status: "completed", description: "Transfer fee", narrationType: "service_fee", category: "Other", createdAt: ago(1, 20) },
 ];
 let card: CardInfo = { id: "c1", name: "Everyday card", last4: "4821", status: "ACTIVE" };
+async function spend(amount: number, description: string, narrationType: Tx["narrationType"]) {
+  if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
+  if (amount > (await simulatedProvider.getBalance())) throw new Error("Not enough balance for this amount.");
+  seed.push({ id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString() });
+}
 export const simulatedProvider: BankingProvider = {
   simulated: true,
   async getBalance() {
@@ -24,5 +29,7 @@ export const simulatedProvider: BankingProvider = {
   listTransactions: () => wait([...seed].sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
   getDepositAccount: () => wait({ bank: "Sandbox Bank", number: "0123456789", name: "Bunch Dillon" }),
   getCard: () => wait(card),
+  sendMoney: (to, amount) => spend(amount, `Sent to ${to}`, "send_to_friend"),
+  withdraw: (bank, account, amount) => spend(amount, `Withdrawal to ${bank} ••${account.slice(-4)}`, "send_to_bank"),
   setCardStatus: (status) => { card = { ...card, status }; return wait(card, 250); },
 };

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { provider, type CardInfo, type DepositAccount, type Tx } from "./provider";
+import MovePanel from "./MovePanel";
+import Coach from "./Coach";
 
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 type Tab = "home" | "move" | "cards" | "insights" | "more";
@@ -61,18 +63,6 @@ function Home({ balance, txs, go }: { balance: number | null; txs: Tx[]; go: (t:
   </>);
 }
 
-function Move({ acct }: { acct: DepositAccount | null }) {
-  const [copied, setCopied] = useState(false);
-  return (<>
-    <h2>Add money</h2>
-    <p className="muted">Transfer from any bank app to this account. It lands in your wallet.</p>
-    {acct && <div className="panel"><div className="t2">{acct.bank}</div><div className="acct">{acct.number}</div><div className="t1">{acct.name}</div>
-      <button className="primary" onClick={() => { navigator.clipboard?.writeText(acct.number); setCopied(true); }}>{copied ? "Copied" : "Copy account number"}</button><Sim /></div>}
-    <h2>Send and withdraw</h2>
-    <p className="muted">Sending to friends and withdrawing to a bank account arrive in the next build.</p>
-  </>);
-}
-
 function Cards({ card, toggle }: { card: CardInfo | null; toggle: () => void }) {
   if (!card) return <p className="empty">Loading card…</p>;
   const frozen = card.status === "BLOCKED";
@@ -101,7 +91,7 @@ function Insights({ txs, balance }: { txs: Tx[]; balance: number | null }) {
     <div className="panel"><div className="t2">Your balance at this pace</div>
       <div className="acct">{runway === null ? "…" : `${runway} days`}</div>
       <div className="t2">You spend about {naira(Math.round(daily))} a day.</div><Sim /></div>
-    <p className="muted">The AI money coach arrives in the next build.</p>
+    <Coach txs={txs} balance={balance} />
   </>);
 }
 
@@ -118,8 +108,9 @@ export default function App() {
   const [txs, setTxs] = useState<Tx[]>([]);
   const [acct, setAcct] = useState<DepositAccount | null>(null);
   const [card, setCard] = useState<CardInfo | null>(null);
+  const refresh = () => { provider.getBalance().then(setBalance); provider.listTransactions().then(setTxs); };
   useEffect(() => {
-    provider.getBalance().then(setBalance); provider.listTransactions().then(setTxs);
+    refresh();
     provider.getDepositAccount().then(setAcct); provider.getCard().then(setCard);
   }, []);
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
@@ -128,7 +119,7 @@ export default function App() {
       <header><strong>PROMIVINE</strong></header>
       <main>
         {tab === "home" && <Home balance={balance} txs={txs} go={setTab} />}
-        {tab === "move" && <Move acct={acct} />}
+        {tab === "move" && <MovePanel acct={acct} onDone={refresh} />}
         {tab === "cards" && <Cards card={card} toggle={toggle} />}
         {tab === "insights" && <Insights txs={txs} balance={balance} />}
         {tab === "more" && <More />}

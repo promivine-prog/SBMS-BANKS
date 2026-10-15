@@ -19,4 +19,6 @@ export interface BankingProvider {
   getDepositAccount(): Promise<DepositAccount>;
   getCard(): Promise<CardInfo>;
   setCardStatus(status: CardInfo["status"]): Promise<CardInfo>;
+  sendMoney(to: string, amount: number): Promise<void>;
+  withdraw(bank: string, account: string, amount: number): Promise<void>;
 }

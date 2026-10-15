@@ -26,3 +26,6 @@ h2{font-size:17px;margin:24px 0 8px;font-weight:600}.day{font-size:13px;color:va
 nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--line);padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
 nav button{background:none;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;font-size:12px;padding:4px}nav button.on{color:var(--brand);font-weight:600}
 button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.field{width:100%;margin:0 0 8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font:inherit}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}.chips button{background:var(--brand-soft);color:var(--brand);border:0;border-radius:999px;padding:8px 12px;font:inherit;font-size:13px;font-weight:500}
+.ask{display:flex;gap:8px}.ask input{flex:1;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit}.ask button{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:0 18px;font:inherit;font-weight:600}
