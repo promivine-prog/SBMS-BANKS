@@ -110,7 +110,7 @@ export default function App() {
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
   return (
     <div className="app">
-      <header><strong>PROMIVINE</strong></header>
+      <header><strong>SBMS</strong></header>
       <main>
         {tab === "home" && <Home balance={balance} txs={txs} go={setTab} />}
         {tab === "move" && <MovePanel acct={acct} onDone={refresh} />}
