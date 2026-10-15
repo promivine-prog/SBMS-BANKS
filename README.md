@@ -12,6 +12,7 @@ Build 3: AI money coach (Claude via /api/coach, rule-based fallback), simulated 
 Build 4: savings goals and an enforced weekly spending limit.
 Build 5: runway planner (daily guide from money, essentials and next income date) with a supportive Survival Mode.
 Build 6: Learn (5 lessons with quizzes) and a hypothetical savings simulator.
+Build 7: optional PIN lock, export my data, delete my data.
 Next: real B Moni provider once a team sandbox key is issued.
 
 ## AI tools used
