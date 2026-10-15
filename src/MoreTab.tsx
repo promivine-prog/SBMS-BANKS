@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { provider, type Goal, type Tx } from "./provider";
+import Learn from "./Learn";
+import Simulator from "./Simulator";
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG");
 export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void }) {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -36,5 +38,7 @@ export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void
       <input className="field" placeholder="Target (₦)" inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value.replace(/\D/g, ""))} />
       <button className="primary" onClick={() => run(() => provider.addGoal(name, +target), "Goal added.")}>Add goal</button>{sim}</div>
     {msg && <p className="muted" role="status">{msg}</p>}
+    <Learn />
+    <Simulator />
   </>);
 }
