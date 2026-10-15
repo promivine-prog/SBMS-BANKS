@@ -10,6 +10,7 @@ export interface Tx {
   category?: Category;
   createdAt: string; // ISO
 }
+export interface Goal { id: string; name: string; target: number; saved: number }
 export interface CardInfo { id: string; name: string; last4: string; status: "ACTIVE" | "BLOCKED" }
 export interface DepositAccount { bank: string; number: string; name: string }
 export interface BankingProvider {
@@ -19,6 +20,11 @@ export interface BankingProvider {
   getDepositAccount(): Promise<DepositAccount>;
   getCard(): Promise<CardInfo>;
   setCardStatus(status: CardInfo["status"]): Promise<CardInfo>;
+  listGoals(): Promise<Goal[]>;
+  addGoal(name: string, target: number): Promise<void>;
+  contribute(goalId: string, amount: number): Promise<void>;
+  getLimit(): Promise<number>;
+  setLimit(weekly: number): Promise<void>;
   sendMoney(to: string, amount: number): Promise<void>;
   withdraw(bank: string, account: string, amount: number): Promise<void>;
 }

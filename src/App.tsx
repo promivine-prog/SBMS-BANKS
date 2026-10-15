@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { provider, type CardInfo, type DepositAccount, type Tx } from "./provider";
 import MovePanel from "./MovePanel";
 import Coach from "./Coach";
+import MoreTab from "./MoreTab";
 
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 type Tab = "home" | "move" | "cards" | "insights" | "more";
@@ -95,13 +96,6 @@ function Insights({ txs, balance }: { txs: Tx[]; balance: number | null }) {
   </>);
 }
 
-function More() {
-  return (<>
-    <h2>More</h2>
-    {["Savings goals", "Spending limits", "Learn", "Language", "Security"].map((x) => <div className="tx" key={x}><div className="grow t1">{x}</div><span className="muted">Soon</span></div>)}
-  </>);
-}
-
 export default function App() {
   const [tab, setTab] = useState<Tab>("home");
   const [balance, setBalance] = useState<number | null>(null);
@@ -122,7 +116,7 @@ export default function App() {
         {tab === "move" && <MovePanel acct={acct} onDone={refresh} />}
         {tab === "cards" && <Cards card={card} toggle={toggle} />}
         {tab === "insights" && <Insights txs={txs} balance={balance} />}
-        {tab === "more" && <More />}
+        {tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
       </main>
       <nav>{(Object.keys(LABELS) as Tab[]).map((t) => (
         <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)} aria-label={LABELS[t]}>

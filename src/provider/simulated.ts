@@ -1,4 +1,4 @@
-import type { BankingProvider, CardInfo, Tx } from "./types";
+import type { BankingProvider, CardInfo, Goal, Tx } from "./types";
 const wait = <T,>(v: T, ms = 350) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 const ago = (days: number, hour: number) => {
   const d = new Date(); d.setDate(d.getDate() - days); d.setHours(hour, 15, 0, 0); return d.toISOString();
@@ -15,9 +15,13 @@ const seed: Tx[] = [
   { id: "t8", direction: "outgoing", amount: 100, status: "completed", description: "Transfer fee", narrationType: "service_fee", category: "Other", createdAt: ago(1, 20) },
 ];
 let card: CardInfo = { id: "c1", name: "Everyday card", last4: "4821", status: "ACTIVE" };
+let weeklyLimit = 20000;
+const goals: Goal[] = [{ id: "g1", name: "New laptop", target: 150000, saved: 20000 }];
+const weekSpend = () => seed.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && Date.now() - +new Date(t.createdAt) < 7 * 864e5).reduce((s, t) => s + t.amount, 0);
 async function spend(amount: number, description: string, narrationType: Tx["narrationType"]) {
   if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
   if (amount > (await simulatedProvider.getBalance())) throw new Error("Not enough balance for this amount.");
+  if (weekSpend() + amount > weeklyLimit) throw new Error(`This would pass your weekly limit of ₦${weeklyLimit.toLocaleString("en-NG")}. Raise it in More to continue.`);
   seed.push({ id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString() });
 }
 export const simulatedProvider: BankingProvider = {
@@ -31,5 +35,17 @@ export const simulatedProvider: BankingProvider = {
   getCard: () => wait(card),
   sendMoney: (to, amount) => spend(amount, `Sent to ${to}`, "send_to_friend"),
   withdraw: (bank, account, amount) => spend(amount, `Withdrawal to ${bank} ••${account.slice(-4)}`, "send_to_bank"),
+  listGoals: () => wait(goals.map((g) => ({ ...g })), 200),
+  async addGoal(name, target) { if (!name.trim() || !(target > 0)) throw new Error("Give the goal a name and a target above ₦0."); goals.push({ id: "g" + Date.now(), name: name.trim(), target, saved: 0 }); },
+  async contribute(goalId, amount) {
+    const g = goals.find((x) => x.id === goalId);
+    if (!g) throw new Error("Goal not found.");
+    if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
+    if (amount > (await simulatedProvider.getBalance())) throw new Error("Not enough balance for this amount.");
+    g.saved += amount;
+    seed.push({ id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description: `Saved to ${g.name}`, narrationType: "send_to_friend", category: "Savings", createdAt: new Date().toISOString() });
+  },
+  getLimit: () => wait(weeklyLimit, 150),
+  async setLimit(weekly) { if (!(weekly > 0)) throw new Error("Limit must be above ₦0."); weeklyLimit = weekly; },
   setCardStatus: (status) => { card = { ...card, status }; return wait(card, 250); },
 };
