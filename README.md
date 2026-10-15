@@ -11,6 +11,7 @@ Build 2: server layer. `/api/smoke` checks settings, B Moni and Supabase. `/api/
 Build 3: AI money coach (Claude via /api/coach, rule-based fallback), simulated send and withdraw.
 Build 4: savings goals and an enforced weekly spending limit.
 Build 5: runway planner (daily guide from money, essentials and next income date) with a supportive Survival Mode.
+Build 6: Learn (5 lessons with quizzes) and a hypothetical savings simulator.
 Next: real B Moni provider once a team sandbox key is issued.
 
 ## AI tools used
