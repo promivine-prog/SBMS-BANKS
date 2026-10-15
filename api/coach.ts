@@ -11,7 +11,7 @@ export default async function handler(req: any, res: any) {
     const model = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST", headers: { "x-goog-api-key": gem, "content-type": "application/json" },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 400 } }),
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 1500 } }),
     });
     if (!r.ok) return res.status(502).json({ error: "Gemini request failed", status: r.status });
     const j = await r.json();
@@ -21,7 +21,7 @@ export default async function handler(req: any, res: any) {
   if (ant) {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST", headers: { "x-api-key": ant, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5", max_tokens: 400, system: SYSTEM, messages: [{ role: "user", content: prompt }] }),
+      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5", max_tokens: 700, system: SYSTEM, messages: [{ role: "user", content: prompt }] }),
     });
     if (!r.ok) return res.status(502).json({ error: "Claude request failed", status: r.status });
     const j = await r.json();
