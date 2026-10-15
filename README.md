@@ -10,6 +10,7 @@ Build 1: banking-style UI shell on a simulated provider (screens labelled "Simul
 Build 2: server layer. `/api/smoke` checks settings, B Moni and Supabase. `/api/setup-user` creates our sandbox user.
 Build 3: AI money coach (Claude via /api/coach, rule-based fallback), simulated send and withdraw.
 Build 4: savings goals and an enforced weekly spending limit.
+Build 5: runway planner (daily guide from money, essentials and next income date) with a supportive Survival Mode.
 Next: real B Moni provider once a team sandbox key is issued.
 
 ## AI tools used

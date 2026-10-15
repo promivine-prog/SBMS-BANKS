@@ -3,6 +3,7 @@ import { provider, type CardInfo, type DepositAccount, type Tx } from "./provide
 import MovePanel from "./MovePanel";
 import Coach from "./Coach";
 import MoreTab from "./MoreTab";
+import PlanCard from "./PlanCard";
 
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 type Tab = "home" | "move" | "cards" | "insights" | "more";
@@ -59,6 +60,7 @@ function Home({ balance, txs, go }: { balance: number | null; txs: Tx[]; go: (t:
         <button key={a} onClick={() => go(a === "Cards" ? "cards" : "move")}>{a}</button>
       ))}
     </div>
+    <PlanCard balance={balance} />
     <h2>Recent activity</h2>
     <TxList txs={txs} />
   </>);
@@ -110,7 +112,7 @@ export default function App() {
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
   return (
     <div className="app">
-      <header><strong>SBMS</strong></header>
+      <header><strong>PROMIVINE</strong></header>
       <main>
         {tab === "home" && <Home balance={balance} txs={txs} go={setTab} />}
         {tab === "move" && <MovePanel acct={acct} onDone={refresh} />}

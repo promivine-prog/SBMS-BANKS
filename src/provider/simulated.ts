@@ -1,4 +1,4 @@
-import type { BankingProvider, CardInfo, Goal, Tx } from "./types";
+import type { BankingProvider, CardInfo, Goal, Plan, Tx } from "./types";
 const wait = <T,>(v: T, ms = 350) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 const ago = (days: number, hour: number) => {
   const d = new Date(); d.setDate(d.getDate() - days); d.setHours(hour, 15, 0, 0); return d.toISOString();
@@ -16,6 +16,7 @@ const seed: Tx[] = [
 ];
 let card: CardInfo = { id: "c1", name: "Everyday card", last4: "4821", status: "ACTIVE" };
 let weeklyLimit = 20000;
+let plan: Plan = { essentials: 6000, cash: 0, nextIncome: new Date(Date.now() + 9 * 864e5).toISOString().slice(0, 10) };
 const goals: Goal[] = [{ id: "g1", name: "New laptop", target: 150000, saved: 20000 }];
 const weekSpend = () => seed.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && Date.now() - +new Date(t.createdAt) < 7 * 864e5).reduce((s, t) => s + t.amount, 0);
 async function spend(amount: number, description: string, narrationType: Tx["narrationType"]) {
@@ -35,6 +36,8 @@ export const simulatedProvider: BankingProvider = {
   getCard: () => wait(card),
   sendMoney: (to, amount) => spend(amount, `Sent to ${to}`, "send_to_friend"),
   withdraw: (bank, account, amount) => spend(amount, `Withdrawal to ${bank} ••${account.slice(-4)}`, "send_to_bank"),
+  getPlan: () => wait({ ...plan }, 150),
+  async setPlan(p) { if (p.essentials < 0 || p.cash < 0) throw new Error("Amounts cannot be negative."); plan = { ...p }; },
   listGoals: () => wait(goals.map((g) => ({ ...g })), 200),
   async addGoal(name, target) { if (!name.trim() || !(target > 0)) throw new Error("Give the goal a name and a target above ₦0."); goals.push({ id: "g" + Date.now(), name: name.trim(), target, saved: 0 }); },
   async contribute(goalId, amount) {
