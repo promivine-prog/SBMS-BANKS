@@ -11,7 +11,8 @@ export interface Tx {
   createdAt: string; // ISO
 }
 export interface Goal { id: string; name: string; target: number; saved: number }
-export interface Plan { essentials: number; cash: number; nextIncome: string | null }
+export interface Income { id: string; name: string; amount: number; date: string }
+export interface Plan { essentials: number; cash: number; nextIncome: string | null; incomes: Income[] }
 export interface CardInfo { id: string; name: string; last4: string; status: "ACTIVE" | "BLOCKED" }
 export interface DepositAccount { bank: string; number: string; name: string }
 export interface BankingProvider {

@@ -37,3 +37,6 @@ details summary{font-weight:600;cursor:pointer;padding:4px 0}
 header{display:flex;justify-content:space-between;align-items:center}.gear{background:none;border:0;color:var(--brand);padding:6px;display:grid;place-items:center}.back{background:none;border:0;color:var(--brand);font:inherit;font-weight:600;padding:8px 0}
 .chips button.on{background:var(--brand);color:#fff}
 .ghost{width:100%;margin-top:8px;background:none;border:1px solid var(--brand);color:var(--brand);border-radius:14px;padding:12px;font:inherit;font-weight:600}
+.chip{font-size:11px;border-radius:999px;padding:3px 10px;background:var(--brand-soft);color:var(--muted)}.chip.up{color:var(--ok)}
+.chipbtn{background:none;border:1px solid var(--line);border-radius:999px;color:var(--muted);font:inherit;font-size:12px;padding:4px 10px}
+.auth{padding:32px 24px}.brand{color:var(--brand);margin:0 0 4px;font-size:34px}

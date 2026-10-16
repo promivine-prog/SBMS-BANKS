@@ -17,7 +17,8 @@ const seed: Tx[] = [
 let card: CardInfo = { id: "c1", name: "Everyday card", last4: "4821", status: "ACTIVE" };
 let weeklyLimit = 20000;
 let opening = 8000;
-let plan: Plan = { essentials: 6000, cash: 0, nextIncome: new Date(Date.now() + 9 * 864e5).toISOString().slice(0, 10) };
+const in9 = new Date(Date.now() + 9 * 864e5).toISOString().slice(0, 10);
+let plan: Plan = { essentials: 6000, cash: 0, nextIncome: in9, incomes: [{ id: "i1", name: "Allowance from Mum", amount: 40000, date: in9 }] };
 const goals: Goal[] = [{ id: "g1", name: "New laptop", target: 150000, saved: 20000 }];
 const weekSpend = () => seed.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && Date.now() - +new Date(t.createdAt) < 7 * 864e5).reduce((s, t) => s + t.amount, 0);
 async function spend(amount: number, description: string, narrationType: Tx["narrationType"]) {
@@ -37,7 +38,7 @@ export const simulatedProvider: BankingProvider = {
   getCard: () => wait(card),
   sendMoney: (to, amount) => spend(amount, `Sent to ${to}`, "send_to_friend"),
   withdraw: (bank, account, amount) => spend(amount, `Withdrawal to ${bank} ••${account.slice(-4)}`, "send_to_bank"),
-  async reset() { seed.length = 0; goals.length = 0; opening = 0; weeklyLimit = 20000; plan = { essentials: 0, cash: 0, nextIncome: null }; },
+  async reset() { seed.length = 0; goals.length = 0; opening = 0; weeklyLimit = 20000; plan = { essentials: 0, cash: 0, nextIncome: null, incomes: [] }; },
   getPlan: () => wait({ ...plan }, 150),
   async setPlan(p) { if (p.essentials < 0 || p.cash < 0) throw new Error("Amounts cannot be negative."); plan = { ...p }; },
   listGoals: () => wait(goals.map((g) => ({ ...g })), 200),

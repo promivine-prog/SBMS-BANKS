@@ -1,6 +1,6 @@
 // Device-only convenience lock. The PIN is salted and hashed in this browser's storage and never sent anywhere.
 const KEY = "sbms_pin";
-const hash = async (pin: string, salt: string) => {
+export const hash = async (pin: string, salt: string) => {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + pin));
   return Array.from(new Uint8Array(b), (x) => x.toString(16).padStart(2, "0")).join("");
 };
