@@ -1,25 +1,35 @@
-# PROMIVINE – B Moni x TINC26 Hackathon
+# SBMS – B Moni x TINC26 Hackathon
 
-Started 15 Oct 2026 for the "From Access to Agency" hackathon. All code here was written during the hackathon window.
+**Team PROMIVINE:** Divine Iwanger Ande and <your full name>
+**Theme:** From Access to Agency
+**Live demo:** https://sbms-banks-bovf.vercel.app
+Started 15 Oct 2026 for this hackathon. All code in this repository was written during the hackathon window.
 
-## Run
-npm install && npm run dev
+## What it does
+A banking-style app for Nigerian students living on small, irregular money:
+- Money plan with a daily spending guide, expected incomes, and a supportive Survival Mode
+- Weekly spending limit that blocks overspending until the user raises it
+- Savings goals, spending insights and transaction history
+- AI money coach, plus a "check before sending" scam check
+- Learn lessons, a hypothetical savings simulator
+- Demo signup/login, optional PIN lock, export and delete my data
+- Language picker (draft translations of main labels, awaiting native-speaker review)
+- Installable on a phone's home screen
 
-## Status
-Build 1: banking-style UI shell on a simulated provider (screens labelled "Simulated").
-Build 2: server layer. `/api/smoke` checks settings, B Moni and Supabase. `/api/setup-user` creates our sandbox user.
-Build 3: AI money coach (Claude via /api/coach, rule-based fallback), simulated send and withdraw.
-Build 4: savings goals and an enforced weekly spending limit.
-Build 5: runway planner (daily guide from money, essentials and next income date) with a supportive Survival Mode.
-Build 6: Learn (5 lessons with quizzes) and a hypothetical savings simulator.
-Build 7: optional PIN lock, export my data, delete my data.
-Build 9: language picker in Settings (draft translations of main labels, pending native review) and a transaction history screen.
-Build 10: "Check before sending" scam check (rule-based floor plus AI).
-Build 11: demo signup/login (device-only), several expected incomes feeding the money plan, "B Moni sandbox: connected" chip, installable manifest.
-Next: real B Moni provider once a team sandbox key is issued.
+## Live vs simulated
+**Live:** hosting, server functions, Supabase database, B Moni sandbox health check, AI coach.
+**Simulated (labelled "Simulated" in the app):** wallet balance, transactions, deposit account, send, withdraw, card, goals and limit.
+Both shared B Moni test identities were already taken (409), so a simulated provider stands in. The app talks to one provider interface, so the real B Moni provider can be switched in once a team sandbox key is issued.
 
 ## AI tools used
-Claude (Anthropic): coding assistance and, later, the in-app money coach.
+- **Claude (Anthropic):** coding assistance, used to plan and write the app and the draft translations.
+- **Gemini (Google AI Studio, free tier):** powers the in-app money coach and scam check through a server function. It receives only synthetic data. Anthropic's API is supported as an alternative.
+- **Rule-based fallback:** used, and labelled in the app, when no AI key is set.
+
+## Run locally
+npm install && npm run dev
+Server functions need env variables (see .env.example): BMONI_BASE_URL, BMONI_API_KEY, BMONI_MASTER_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY.
 
 ## Sandbox only
 No real money, BVNs, accounts or cards. B Moni sandbox and synthetic data only.
+No keys are stored in this repository.
