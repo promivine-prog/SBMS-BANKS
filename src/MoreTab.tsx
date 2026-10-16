@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { provider, type Goal, type Tx } from "./provider";
 import Learn from "./Learn";
 import Simulator from "./Simulator";
-import Privacy from "./Privacy";
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG");
-export default function MoreTab({ txs, onDone, onLock, onReset }: { txs: Tx[]; onDone: () => void; onLock: () => void; onReset: () => void }) {
+export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [limit, setLimit] = useState(0);
   const [name, setName] = useState(""); const [target, setTarget] = useState(""); const [lim, setLim] = useState("");
@@ -41,6 +40,5 @@ export default function MoreTab({ txs, onDone, onLock, onReset }: { txs: Tx[]; o
     {msg && <p className="muted" role="status">{msg}</p>}
     <Learn />
     <Simulator />
-    <Privacy onLock={onLock} onReset={onReset} />
   </>);
 }

@@ -34,3 +34,4 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .opt{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font:inherit}.opt.good{border-color:var(--ok);background:#E3F6EC;color:#14532d}.opt.bad{border-color:var(--err)}
 details summary{font-weight:600;cursor:pointer;padding:4px 0}
 .lock{display:flex;flex-direction:column;justify-content:center;padding:24px}.pin{text-align:center;font-size:28px;letter-spacing:.5em}
+header{display:flex;justify-content:space-between;align-items:center}.gear{background:none;border:0;color:var(--brand);padding:6px;display:grid;place-items:center}.back{background:none;border:0;color:var(--brand);font:inherit;font-weight:600;padding:8px 0}
