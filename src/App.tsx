@@ -4,6 +4,8 @@ import MovePanel from "./MovePanel";
 import Coach from "./Coach";
 import MoreTab from "./MoreTab";
 import PlanCard from "./PlanCard";
+import LockScreen from "./Lock";
+import { hasPin } from "./pin";
 
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 type Tab = "home" | "move" | "cards" | "insights" | "more";
@@ -109,16 +111,19 @@ export default function App() {
     refresh();
     provider.getDepositAccount().then(setAcct); provider.getCard().then(setCard);
   }, []);
+  const [locked, setLocked] = useState(hasPin());
+  const [epoch, setEpoch] = useState(0);
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
+  if (locked) return <LockScreen onUnlock={() => setLocked(false)} />;
   return (
     <div className="app">
-      <header><strong>PROMIVINE</strong></header>
-      <main>
+      <header><strong>SBMS</strong></header>
+      <main key={epoch}>
         {tab === "home" && <Home balance={balance} txs={txs} go={setTab} />}
         {tab === "move" && <MovePanel acct={acct} onDone={refresh} />}
         {tab === "cards" && <Cards card={card} toggle={toggle} />}
         {tab === "insights" && <Insights txs={txs} balance={balance} />}
-        {tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
+        {tab === "more" && <MoreTab txs={txs} onDone={refresh} onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} />}
       </main>
       <nav>{(Object.keys(LABELS) as Tab[]).map((t) => (
         <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)} aria-label={LABELS[t]}>

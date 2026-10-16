@@ -21,6 +21,7 @@ export interface BankingProvider {
   getDepositAccount(): Promise<DepositAccount>;
   getCard(): Promise<CardInfo>;
   setCardStatus(status: CardInfo["status"]): Promise<CardInfo>;
+  reset(): Promise<void>;
   getPlan(): Promise<Plan>;
   setPlan(plan: Plan): Promise<void>;
   listGoals(): Promise<Goal[]>;
