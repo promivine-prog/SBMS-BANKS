@@ -75,14 +75,26 @@ function Home({ balance, txs, go, onHistory }: { balance: number | null; txs: Tx
   </>);
 }
 
-function Cards({ card, toggle }: { card: CardInfo | null; toggle: () => void }) {
+function Cards({ card, toggle, onNew }: { card: CardInfo | null; toggle: () => void; onNew: () => Promise<void> }) {
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
   if (!card) return <p className="empty">Loading card…</p>;
   const frozen = card.status === "BLOCKED";
   return (<>
-    <div className={"card" + (frozen ? " frozen" : "")}><div>{card.name}</div><div className="pan">•••• •••• •••• {card.last4}</div><div>{frozen ? "Frozen" : "Active"}</div></div>
+    <div className={"card" + (frozen ? " frozen" : "")}>
+      <div>{card.name}</div>
+      <div className="pan">{show ? card.number : `•••• •••• •••• ${card.last4}`}</div>
+      <div>{show ? `Exp ${card.expiry}   CVV ${card.cvv}` : frozen ? "Frozen" : "Active"}</div>
+    </div>
     <Sim />
     <button className="primary" onClick={toggle}>{frozen ? "Unfreeze card" : "Freeze card"}</button>
-    <p className="muted">Freezing stops every payment on this card until you unfreeze it.</p>
+    <button className="ghost" onClick={() => setShow(!show)}>{show ? "Hide card details" : "Show card details"}</button>
+    {show && <p className="muted">Test card details. This is not a real card number and cannot be used for payments.</p>}
+    <h2>Need another card?</h2>
+    <p className="muted">In the real B Moni flow, a creation fee (about ₦1,000 in their example) is charged and the first card needs your NIN. Here it is simulated and free. The new card replaces this one.</p>
+    <button className="ghost" disabled={busy} onClick={async () => { setBusy(true); await onNew(); setShow(false); setMsg("New test card created."); setBusy(false); }}>{busy ? "Creating…" : "Get a new card"}</button>
+    {msg && <p className="muted" role="status">{msg}</p>}
   </>);
 }
 
@@ -135,7 +147,7 @@ export default function App() {
         {history && !settings && <History txs={txs} onBack={() => setHistory(false)} />}
         {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} />}
         {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} />}
-        {!settings && !history && tab === "cards" && <Cards card={card} toggle={toggle} />}
+        {!settings && !history && tab === "cards" && <Cards card={card} toggle={toggle} onNew={() => provider.issueCard().then(setCard)} />}
         {!settings && !history && tab === "insights" && <Insights txs={txs} balance={balance} />}
         {!settings && !history && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
       </main>

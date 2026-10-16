@@ -14,7 +14,9 @@ const seed: Tx[] = [
   { id: "t7", direction: "outgoing", amount: 1500, status: "completed", description: "Okada to hostel", narrationType: "send_to_friend", category: "Transport", createdAt: ago(1, 20) },
   { id: "t8", direction: "outgoing", amount: 100, status: "completed", description: "Transfer fee", narrationType: "service_fee", category: "Other", createdAt: ago(1, 20) },
 ];
-let card: CardInfo = { id: "c1", name: "Everyday card", last4: "4821", status: "ACTIVE" };
+// Synthetic test card: the 0000 prefix is not a real card number range.
+const testCard = (last4: string): CardInfo => ({ id: "c" + Date.now(), name: "Everyday card", last4, number: `0000 0000 0000 ${last4}`, expiry: "12/29", cvv: "000", status: "ACTIVE" });
+let card: CardInfo = testCard("4821");
 let weeklyLimit = 20000;
 let opening = 8000;
 const in9 = new Date(Date.now() + 9 * 864e5).toISOString().slice(0, 10);
@@ -53,5 +55,6 @@ export const simulatedProvider: BankingProvider = {
   },
   getLimit: () => wait(weeklyLimit, 150),
   async setLimit(weekly) { if (!(weekly > 0)) throw new Error("Limit must be above ₦0."); weeklyLimit = weekly; },
+  issueCard() { card = testCard(String(1000 + Math.floor(Math.random() * 9000))); return wait(card, 600); },
   setCardStatus: (status) => { card = { ...card, status }; return wait(card, 250); },
 };

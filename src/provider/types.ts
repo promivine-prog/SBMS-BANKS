@@ -13,7 +13,7 @@ export interface Tx {
 export interface Goal { id: string; name: string; target: number; saved: number }
 export interface Income { id: string; name: string; amount: number; date: string }
 export interface Plan { essentials: number; cash: number; nextIncome: string | null; incomes: Income[] }
-export interface CardInfo { id: string; name: string; last4: string; status: "ACTIVE" | "BLOCKED" }
+export interface CardInfo { id: string; name: string; last4: string; number: string; expiry: string; cvv: string; status: "ACTIVE" | "BLOCKED" }
 export interface DepositAccount { bank: string; number: string; name: string }
 export interface BankingProvider {
   simulated: boolean;
@@ -21,6 +21,7 @@ export interface BankingProvider {
   listTransactions(): Promise<Tx[]>;
   getDepositAccount(): Promise<DepositAccount>;
   getCard(): Promise<CardInfo>;
+  issueCard(): Promise<CardInfo>;
   setCardStatus(status: CardInfo["status"]): Promise<CardInfo>;
   reset(): Promise<void>;
   getPlan(): Promise<Plan>;
