@@ -13,6 +13,7 @@ Build 4: savings goals and an enforced weekly spending limit.
 Build 5: runway planner (daily guide from money, essentials and next income date) with a supportive Survival Mode.
 Build 6: Learn (5 lessons with quizzes) and a hypothetical savings simulator.
 Build 7: optional PIN lock, export my data, delete my data.
+Build 9: language picker in Settings (draft translations of main labels, pending native review) and a transaction history screen.
 Next: real B Moni provider once a team sandbox key is issued.
 
 ## AI tools used

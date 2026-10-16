@@ -35,3 +35,4 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 details summary{font-weight:600;cursor:pointer;padding:4px 0}
 .lock{display:flex;flex-direction:column;justify-content:center;padding:24px}.pin{text-align:center;font-size:28px;letter-spacing:.5em}
 header{display:flex;justify-content:space-between;align-items:center}.gear{background:none;border:0;color:var(--brand);padding:6px;display:grid;place-items:center}.back{background:none;border:0;color:var(--brand);font:inherit;font-weight:600;padding:8px 0}
+.chips button.on{background:var(--brand);color:#fff}

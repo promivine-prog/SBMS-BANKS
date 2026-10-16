@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Tx } from "./provider";
 import { localCoach } from "./coach";
+import { tr } from "./i18n";
 const PROMPTS = ["Can I afford ₦5,000 shoes?", "Where can I cut spending?", "Is anything suspicious?"];
 export default function Coach({ txs, balance }: { txs: Tx[]; balance: number | null }) {
   const [q, setQ] = useState("");
@@ -18,7 +19,7 @@ export default function Coach({ txs, balance }: { txs: Tx[]; balance: number | n
     setBusy(false);
   }
   return (<>
-    <h2>Money coach</h2>
+    <h2>{tr("Money coach")}</h2>
     <div className="chips">{PROMPTS.map((p) => <button key={p} onClick={() => ask(p)}>{p}</button>)}</div>
     <div className="ask"><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about your money" maxLength={300} /><button onClick={() => ask(q)} disabled={busy}>{busy ? "…" : "Ask"}</button></div>
     {a && <div className="panel"><div>{a.text}</div><span className="sim">{a.by}</span></div>}

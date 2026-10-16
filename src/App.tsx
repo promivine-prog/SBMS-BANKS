@@ -6,6 +6,9 @@ import MoreTab from "./MoreTab";
 import PlanCard from "./PlanCard";
 import LockScreen from "./Lock";
 import Privacy from "./Privacy";
+import Language from "./Language";
+import History from "./History";
+import { tr } from "./i18n";
 import { hasPin } from "./pin";
 
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -50,21 +53,21 @@ function TxList({ txs }: { txs: Tx[] }) {
   ))}</>;
 }
 
-function Home({ balance, txs, go }: { balance: number | null; txs: Tx[]; go: (t: Tab) => void }) {
+function Home({ balance, txs, go, onHistory }: { balance: number | null; txs: Tx[]; go: (t: Tab) => void; onHistory: () => void }) {
   const [hide, setHide] = useState(false);
   return (<>
     <div className="wallet">
-      <div className="row"><span>Available balance</span><button className="eye" onClick={() => setHide(!hide)}>{hide ? "Show" : "Hide"}</button></div>
+      <div className="row"><span>{tr("Available balance")}</span><button className="eye" onClick={() => setHide(!hide)}>{tr(hide ? "Show" : "Hide")}</button></div>
       <div className="bal">{balance === null ? "…" : hide ? "₦ ••••••" : naira(balance)}</div>
       <Sim />
     </div>
     <div className="actions">
       {(["Add money", "Send", "Withdraw", "Cards"] as const).map((a) => (
-        <button key={a} onClick={() => go(a === "Cards" ? "cards" : "move")}>{a}</button>
+        <button key={a} onClick={() => go(a === "Cards" ? "cards" : "move")}>{tr(a)}</button>
       ))}
     </div>
     <PlanCard balance={balance} />
-    <h2>Recent activity</h2>
+    <div className="row"><h2>{tr("Recent activity")}</h2><button className="gear" aria-label={tr("Transaction history")} onClick={onHistory}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></button></div>
     <TxList txs={txs} />
   </>);
 }
@@ -115,23 +118,26 @@ export default function App() {
   const [locked, setLocked] = useState(hasPin());
   const [epoch, setEpoch] = useState(0);
   const [settings, setSettings] = useState(false);
+  const [history, setHistory] = useState(false);
+  const [, setTick] = useState(0);
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
   if (locked) return <LockScreen onUnlock={() => setLocked(false)} />;
   return (
     <div className="app">
-      <header><strong>SBMS</strong><button className="gear" aria-label="Settings" onClick={() => setSettings(true)}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></header>
+      <header><strong>SBMS</strong><button className="gear" aria-label="Settings" onClick={() => { setSettings(true); setHistory(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></header>
       <main key={epoch}>
-        {settings && (<><button className="back" onClick={() => setSettings(false)}>← Back</button><h2>Settings</h2><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /></>)}
-        {!settings && tab === "home" && <Home balance={balance} txs={txs} go={setTab} />}
-        {!settings && tab === "move" && <MovePanel acct={acct} onDone={refresh} />}
-        {!settings && tab === "cards" && <Cards card={card} toggle={toggle} />}
-        {!settings && tab === "insights" && <Insights txs={txs} balance={balance} />}
-        {!settings && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
+        {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /></>)}
+        {history && !settings && <History txs={txs} onBack={() => setHistory(false)} />}
+        {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} />}
+        {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} />}
+        {!settings && !history && tab === "cards" && <Cards card={card} toggle={toggle} />}
+        {!settings && !history && tab === "insights" && <Insights txs={txs} balance={balance} />}
+        {!settings && !history && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
       </main>
       <nav>{(Object.keys(LABELS) as Tab[]).map((t) => (
-        <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSettings(false); }} aria-label={LABELS[t]}>
+        <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSettings(false); setHistory(false); }} aria-label={LABELS[t]}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS[t]} /></svg>
-          <span>{LABELS[t]}</span>
+          <span>{tr(LABELS[t])}</span>
         </button>))}
       </nav>
     </div>

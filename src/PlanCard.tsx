@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { provider } from "./provider";
+import { tr } from "./i18n";
 import { runway } from "./runway";
 const naira = (n: number) => "₦" + Math.round(n).toLocaleString("en-NG");
 export default function PlanCard({ balance }: { balance: number | null }) {
@@ -15,13 +16,13 @@ export default function PlanCard({ balance }: { balance: number | null }) {
   const r = runway(balance, saved.cash, saved.essentials, saved.nextIncome);
   const sim = provider.simulated && <span className="sim">Simulated</span>;
   return (<>
-    <h2>My money plan</h2>
+    <h2>{tr("My money plan")}</h2>
     <div className="panel">
       <div className="row"><span>Available now</span><span>{naira(r.available)}</span></div>
       <div className="row"><span>Protected for essentials</span><span>{naira(r.essentials)}</span></div>
       <div className="row"><span>Flexible amount</span><span>{naira(Math.max(0, r.flexible))}</span></div>
       <div className="row"><span>Days to next income</span><span>{r.days ?? "Not set"}</span></div>
-      <div className="row"><strong>Daily guide</strong><strong>{r.daily === null ? "–" : naira(r.daily)}</strong></div>
+      <div className="row"><strong>{tr("Daily guide")}</strong><strong>{r.daily === null ? "–" : naira(r.daily)}</strong></div>
       <p className="muted">Estimate based on what you entered, not a guarantee.</p>
       {r.status === "no-date" && <p className="muted">Add your next income date to see a daily guide.</p>}
       {r.status === "stale" && <p className="muted">That income date has passed. Update it so the guide stays honest.</p>}
