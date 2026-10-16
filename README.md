@@ -14,6 +14,7 @@ Build 5: runway planner (daily guide from money, essentials and next income date
 Build 6: Learn (5 lessons with quizzes) and a hypothetical savings simulator.
 Build 7: optional PIN lock, export my data, delete my data.
 Build 9: language picker in Settings (draft translations of main labels, pending native review) and a transaction history screen.
+Build 10: "Check before sending" scam check (rule-based floor plus AI).
 Next: real B Moni provider once a team sandbox key is issued.
 
 ## AI tools used

@@ -129,7 +129,7 @@ export default function App() {
         {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /></>)}
         {history && !settings && <History txs={txs} onBack={() => setHistory(false)} />}
         {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} />}
-        {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} />}
+        {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} />}
         {!settings && !history && tab === "cards" && <Cards card={card} toggle={toggle} />}
         {!settings && !history && tab === "insights" && <Insights txs={txs} balance={balance} />}
         {!settings && !history && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
