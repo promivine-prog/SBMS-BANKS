@@ -7,6 +7,7 @@ import PlanCard from "./PlanCard";
 import LockScreen from "./Lock";
 import Privacy from "./Privacy";
 import Language from "./Language";
+import { LegalLinks } from "./Legal";
 import History from "./History";
 import { tr } from "./i18n";
 import AuthScreen from "./Auth";
@@ -143,7 +144,7 @@ export default function App() {
     <div className="app">
       <header><strong>SBMS</strong><BmoniChip /><button className="gear" aria-label="Settings" onClick={() => { setSettings(true); setHistory(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></header>
       <main key={epoch}>
-        {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><div className="panel"><div className="t2">Signed in as</div><div className="t1">{displayName()}</div><button className="ghost" onClick={() => { logout(); setAuthed(false); }}>Log out</button></div><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /></>)}
+        {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><div className="panel"><div className="t2">Signed in as</div><div className="t1">{displayName()}</div><button className="ghost" onClick={() => { logout(); setAuthed(false); }}>Log out</button></div><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /><LegalLinks /></>)}
         {history && !settings && <History txs={txs} onBack={() => setHistory(false)} />}
         {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} />}
         {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} />}
