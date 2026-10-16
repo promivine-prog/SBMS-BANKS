@@ -10,6 +10,8 @@ export default function PlanCard({ balance }: { balance: number | null }) {
   const [ess, setEss] = useState(""), [cash, setCash] = useState("");
   const [iname, setIname] = useState(""), [iamt, setIamt] = useState(""), [idate, setIdate] = useState("");
   const [msg, setMsg] = useState("");
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem("sbms_plan_open") !== "0"; } catch { return true; } });
+  const toggle = () => { const v = !open; setOpen(v); try { localStorage.setItem("sbms_plan_open", v ? "1" : "0"); } catch { /* ignore */ } };
   useEffect(() => { provider.getPlan().then((p) => { setSaved(p); setEss(String(p.essentials)); setCash(String(p.cash)); }); }, []);
   const persist = async (p: Plan, ok: string) => { try { await provider.setPlan(p); setSaved(p); setMsg(ok); } catch (e: any) { setMsg(e.message ?? "Could not save."); } };
   const addIncome = () => {
@@ -23,8 +25,11 @@ export default function PlanCard({ balance }: { balance: number | null }) {
   const r = runway(balance, saved.cash, saved.essentials, next);
   const sim = provider.simulated && <span className="sim">Simulated</span>;
   return (<>
-    <h2>{tr("My money plan")}</h2>
-    <div className="panel">
+    <div className="row"><h2>{tr("My money plan")}</h2>
+      <div className="row">{!open && r.daily !== null && <span className="t2">{naira(r.daily)} a day</span>}
+        <button className="gear" aria-expanded={open} aria-label={open ? "Hide money plan" : "Show money plan"} onClick={toggle}>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{open ? <path d="M6 15l6-6 6 6" /> : <path d="M6 9l6 6 6-6" />}</svg></button></div></div>
+    {open && (<div className="panel">
       <div className="row"><span>Available now</span><span>{naira(r.available)}</span></div>
       <div className="row"><span>Protected for essentials</span><span>{naira(r.essentials)}</span></div>
       <div className="row"><span>Flexible amount</span><span>{naira(Math.max(0, r.flexible))}</span></div>
@@ -48,6 +53,6 @@ export default function PlanCard({ balance }: { balance: number | null }) {
       <input className="field" type="date" aria-label="Expected date" value={idate} onChange={(e) => setIdate(e.target.value)} />
       <button className="ghost" onClick={addIncome}>Add expected income</button>{sim}
       {msg && <p className="muted" role="status">{msg}</p>}
-    </div>
+    </div>)}
   </>);
 }
