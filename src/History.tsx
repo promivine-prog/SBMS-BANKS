@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Tx } from "./provider";
+import { provider, type Tx } from "./provider";
 import { tr } from "./i18n";
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG");
 type F = "all" | "in" | "out";
@@ -15,6 +15,7 @@ export default function History({ txs, onBack }: { txs: Tx[]; onBack: () => void
   return (<>
     <button className="back" onClick={onBack}>← {tr("Back")}</button>
     <h2>{tr("Transaction history")}</h2>
+    {provider.simulated && <span className="sim">Simulated</span>}
     <div className="panel"><div className="row"><span>Money in</span><strong className="amt incoming">{naira(sum("incoming"))}</strong></div>
       <div className="row"><span>Money out</span><strong>{naira(sum("outgoing"))}</strong></div></div>
     <div className="chips">{([["all", "All"], ["in", "Money in"], ["out", "Money out"]] as [F, string][]).map(([k, l]) => <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{l}</button>)}</div>
