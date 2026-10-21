@@ -118,7 +118,7 @@ function Insights({ txs, balance }: { txs: Tx[]; balance: number | null }) {
     <div className="panel"><div className="t2">Your balance at this pace</div>
       <div className="acct">{runway === null ? "…" : `${runway} days`}</div>
       <div className="t2">You spend about {naira(Math.round(daily))} a day.</div><Sim /></div>
-    <Coach txs={txs} balance={balance} onReceipt={setReceipt} />
+    <Coach txs={txs} balance={balance} />
   </>);
 }
 
@@ -151,7 +151,7 @@ export default function App() {
         {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><div className="panel"><div className="t2">Signed in as</div><div className="t1">{displayName()}</div><button className="ghost" onClick={() => { logout(); setAuthed(false); }}>Log out</button></div><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /><LegalLinks /></>)}
         {history && !settings && <History txs={txs} onBack={() => setHistory(false)} onOpen={setReceipt} />}
         {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} onOpen={setReceipt} />}
-        {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} />}
+        {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} onReceipt={setReceipt} />}
         {!settings && !history && tab === "cards" && <Cards card={card} toggle={toggle} onNew={() => provider.issueCard().then(setCard)} />}
         {!settings && !history && tab === "insights" && <Insights txs={txs} balance={balance} />}
         {!settings && !history && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
