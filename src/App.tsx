@@ -10,6 +10,8 @@ import Language from "./Language";
 import { LegalLinks } from "./Legal";
 import History from "./History";
 import { tr } from "./i18n";
+import Receipt from "./Receipt";
+import { statusLabel } from "./txui";
 import AuthScreen from "./Auth";
 import BmoniChip from "./BmoniChip";
 import { displayName, isSignedIn, logout } from "./auth";
@@ -36,7 +38,7 @@ function dayLabel(iso: string) {
   return d.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
 }
 
-function TxList({ txs }: { txs: Tx[] }) {
+function TxList({ txs, onOpen }: { txs: Tx[]; onOpen: (t: Tx) => void }) {
   const groups = useMemo(() => {
     const m = new Map<string, Tx[]>();
     txs.forEach((t) => { const k = dayLabel(t.createdAt); m.set(k, [...(m.get(k) ?? []), t]); });
@@ -47,9 +49,9 @@ function TxList({ txs }: { txs: Tx[] }) {
     <section key={day}>
       <h3 className="day">{day}</h3>
       {items.map((t) => (
-        <div className="tx" key={t.id}>
+        <div className="tx click" key={t.id} role="button" tabIndex={0} onClick={() => onOpen(t)} onKeyDown={(e) => e.key === "Enter" && onOpen(t)}>
           <div className={"dot " + t.direction}>{t.direction === "incoming" ? "↓" : "↑"}</div>
-          <div className="grow"><div className="t1">{t.description}</div><div className="t2">{t.category ?? "Deposit"} · {t.status}</div></div>
+          <div className="grow"><div className="t1">{t.description}</div><div className="t2">{t.category ?? "Deposit"} · {statusLabel(t)}</div></div>
           <div className={"amt " + t.direction}>{t.direction === "incoming" ? "+" : "-"}{naira(t.amount)}</div>
         </div>
       ))}
@@ -57,7 +59,7 @@ function TxList({ txs }: { txs: Tx[] }) {
   ))}</>;
 }
 
-function Home({ balance, txs, go, onHistory }: { balance: number | null; txs: Tx[]; go: (t: Tab) => void; onHistory: () => void }) {
+function Home({ balance, txs, go, onHistory, onOpen }: { balance: number | null; txs: Tx[]; go: (t: Tab) => void; onHistory: () => void; onOpen: (t: Tx) => void }) {
   const [hide, setHide] = useState(false);
   return (<>
     <div className="wallet">
@@ -72,7 +74,7 @@ function Home({ balance, txs, go, onHistory }: { balance: number | null; txs: Tx
     </div>
     <PlanCard balance={balance} />
     <div className="row"><h2>{tr("Recent activity")}</h2><button className="gear" aria-label={tr("Transaction history")} onClick={onHistory}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></button></div>
-    <TxList txs={txs} />
+    <TxList txs={txs} onOpen={onOpen} />
   </>);
 }
 
@@ -116,7 +118,7 @@ function Insights({ txs, balance }: { txs: Tx[]; balance: number | null }) {
     <div className="panel"><div className="t2">Your balance at this pace</div>
       <div className="acct">{runway === null ? "…" : `${runway} days`}</div>
       <div className="t2">You spend about {naira(Math.round(daily))} a day.</div><Sim /></div>
-    <Coach txs={txs} balance={balance} />
+    <Coach txs={txs} balance={balance} onReceipt={setReceipt} />
   </>);
 }
 
@@ -136,7 +138,9 @@ export default function App() {
   const [epoch, setEpoch] = useState(0);
   const [settings, setSettings] = useState(false);
   const [history, setHistory] = useState(false);
+  const [receipt, setReceipt] = useState<Tx | null>(null);
   const [, setTick] = useState(0);
+  useEffect(() => { if (!txs.some((t) => t.status === "pending")) return; const id = setInterval(refresh, 2000); return () => clearInterval(id); }, [txs]);
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
   if (!authed) return <AuthScreen onDone={() => setAuthed(true)} />;
   if (locked) return <LockScreen onUnlock={() => setLocked(false)} />;
@@ -145,13 +149,14 @@ export default function App() {
       <header><strong>SBMS</strong><BmoniChip /><button className="gear" aria-label="Settings" onClick={() => { setSettings(true); setHistory(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></header>
       <main key={epoch}>
         {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><div className="panel"><div className="t2">Signed in as</div><div className="t1">{displayName()}</div><button className="ghost" onClick={() => { logout(); setAuthed(false); }}>Log out</button></div><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /><LegalLinks /></>)}
-        {history && !settings && <History txs={txs} onBack={() => setHistory(false)} />}
-        {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} />}
+        {history && !settings && <History txs={txs} onBack={() => setHistory(false)} onOpen={setReceipt} />}
+        {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} onOpen={setReceipt} />}
         {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} />}
         {!settings && !history && tab === "cards" && <Cards card={card} toggle={toggle} onNew={() => provider.issueCard().then(setCard)} />}
         {!settings && !history && tab === "insights" && <Insights txs={txs} balance={balance} />}
         {!settings && !history && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
       </main>
+      {receipt && <Receipt tx={txs.find((t) => t.id === receipt.id) ?? receipt} onClose={() => setReceipt(null)} />}
       <nav>{(Object.keys(LABELS) as Tab[]).map((t) => (
         <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSettings(false); setHistory(false); }} aria-label={LABELS[t]}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS[t]} /></svg>

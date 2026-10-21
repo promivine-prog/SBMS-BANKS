@@ -23,11 +23,15 @@ const in9 = new Date(Date.now() + 9 * 864e5).toISOString().slice(0, 10);
 let plan: Plan = { essentials: 6000, cash: 0, nextIncome: in9, incomes: [{ id: "i1", name: "Allowance from Mum", amount: 40000, date: in9 }] };
 const goals: Goal[] = [{ id: "g1", name: "New laptop", target: 150000, saved: 20000 }];
 const weekSpend = () => seed.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && Date.now() - +new Date(t.createdAt) < 7 * 864e5).reduce((s, t) => s + t.amount, 0);
-async function spend(amount: number, description: string, narrationType: Tx["narrationType"]) {
+async function spend(amount: number, description: string, narrationType: Tx["narrationType"]): Promise<Tx> {
   if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
   if (amount > (await simulatedProvider.getBalance())) throw new Error("Not enough balance for this amount.");
   if (weekSpend() + amount > weeklyLimit) throw new Error(`This would pass your weekly limit of ₦${weeklyLimit.toLocaleString("en-NG")}. Raise it in More to continue.`);
-  seed.push({ id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString() });
+  const tx: Tx = { id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString() };
+  seed.push(tx);
+  // Bank withdrawals start Pending, like the real flow (approval and signing), then complete after a few seconds.
+  if (narrationType === "send_to_bank") { tx.status = "pending"; setTimeout(() => { tx.status = "completed"; }, 4000); }
+  return tx;
 }
 export const simulatedProvider: BankingProvider = {
   simulated: true,

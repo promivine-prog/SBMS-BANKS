@@ -31,6 +31,6 @@ export interface BankingProvider {
   contribute(goalId: string, amount: number): Promise<void>;
   getLimit(): Promise<number>;
   setLimit(weekly: number): Promise<void>;
-  sendMoney(to: string, amount: number): Promise<void>;
-  withdraw(bank: string, account: string, amount: number): Promise<void>;
+  sendMoney(to: string, amount: number): Promise<Tx>;
+  withdraw(bank: string, account: string, amount: number): Promise<Tx>;
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { provider, type DepositAccount, type Tx } from "./provider";
 import { localScam, type Level } from "./scam";
 const BANKS = ["Access Bank", "GTBank", "UBA", "Zenith Bank", "First Bank", "Opay"];
-export default function MovePanel({ acct, onDone, txs, balance }: { acct: DepositAccount | null; onDone: () => void; txs: Tx[]; balance: number | null }) {
+export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { acct: DepositAccount | null; onDone: () => void; txs: Tx[]; balance: number | null; onReceipt: (t: Tx) => void }) {
   const [copied, setCopied] = useState(false);
   const [to, setTo] = useState(""); const [amt, setAmt] = useState("");
   const [bank, setBank] = useState(BANKS[0]); const [num, setNum] = useState(""); const [wamt, setWamt] = useState("");
@@ -26,8 +26,8 @@ export default function MovePanel({ acct, onDone, txs, balance }: { acct: Deposi
     } catch { /* keep the rule-based result */ }
     setCheck({ level, reason, by });
   };
-  const run = async (fn: () => Promise<void>, ok: string) => {
-    try { await fn(); setMsg(ok); onDone(); } catch (e: any) { setMsg(e.message ?? "Something went wrong."); }
+  const run = async (fn: () => Promise<Tx | void>, ok: string) => {
+    try { const r = await fn(); setMsg(ok); onDone(); if (r) onReceipt(r); } catch (e: any) { setMsg(e.message ?? "Something went wrong."); }
   };
   const sim = provider.simulated && <span className="sim">Simulated</span>;
   return (<>

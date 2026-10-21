@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { provider, type Tx } from "./provider";
 import { tr } from "./i18n";
+import { statusLabel } from "./txui";
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG");
 type F = "all" | "in" | "out";
-export default function History({ txs, onBack }: { txs: Tx[]; onBack: () => void }) {
+export default function History({ txs, onBack, onOpen }: { txs: Tx[]; onBack: () => void; onOpen: (t: Tx) => void }) {
   const [f, setF] = useState<F>("all");
   const list = useMemo(() => txs.filter((t) => f === "all" || (f === "in") === (t.direction === "incoming")), [txs, f]);
   const sum = (d: Tx["direction"]) => txs.filter((t) => t.direction === d).reduce((s, t) => s + t.amount, 0);
@@ -21,8 +22,8 @@ export default function History({ txs, onBack }: { txs: Tx[]; onBack: () => void
     <div className="chips">{([["all", "All"], ["in", "Money in"], ["out", "Money out"]] as [F, string][]).map(([k, l]) => <button key={k} className={f === k ? "on" : ""} onClick={() => setF(k)}>{l}</button>)}</div>
     {!list.length && <p className="empty">No transactions to show.</p>}
     {groups.map(([day, items]) => (<section key={day}><h3 className="day">{day}</h3>
-      {items.map((t) => (<div className="tx" key={t.id}><div className={"dot " + t.direction}>{t.direction === "incoming" ? "↓" : "↑"}</div>
-        <div className="grow"><div className="t1">{t.description}</div><div className="t2">{t.category ?? "Deposit"} · {t.status}</div></div>
+      {items.map((t) => (<div className="tx click" key={t.id} role="button" tabIndex={0} onClick={() => onOpen(t)} onKeyDown={(e) => e.key === "Enter" && onOpen(t)}><div className={"dot " + t.direction}>{t.direction === "incoming" ? "↓" : "↑"}</div>
+        <div className="grow"><div className="t1">{t.description}</div><div className="t2">{t.category ?? "Deposit"} · {statusLabel(t)}</div></div>
         <div className={"amt " + t.direction}>{t.direction === "incoming" ? "+" : "-"}{naira(t.amount)}</div></div>))}</section>))}
   </>);
 }
