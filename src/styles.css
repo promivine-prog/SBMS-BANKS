@@ -46,3 +46,4 @@ header{display:flex;justify-content:space-between;align-items:center}.gear{backg
 .click{cursor:pointer}
 .badge{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:600;font-size:13px}.badge.ok{background:#E3F6EC;color:#14532d}.badge.wait{background:#FFF3D6;color:#7a4b00}
 .found{background:#E3F6EC;color:#14532d;border-radius:12px;padding:10px 12px;margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}.found .sim{margin:0}
+.chip.off{background:#FFF3D6;color:#7a4b00}

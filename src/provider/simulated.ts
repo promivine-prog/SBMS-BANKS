@@ -23,17 +23,17 @@ const in9 = new Date(Date.now() + 9 * 864e5).toISOString().slice(0, 10);
 let plan: Plan = { essentials: 6000, cash: 0, nextIncome: in9, incomes: [{ id: "i1", name: "Allowance from Mum", amount: 40000, date: in9 }] };
 const goals: Goal[] = [{ id: "g1", name: "New laptop", target: 150000, saved: 20000 }];
 const weekSpend = () => seed.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && Date.now() - +new Date(t.createdAt) < 7 * 864e5).reduce((s, t) => s + t.amount, 0);
-async function spend(amount: number, description: string, narrationType: Tx["narrationType"], to?: Recipient, narration?: string): Promise<Tx> {
+async function spend(amount: number, description: string, narrationType: Tx["narrationType"], to?: Recipient, narration?: string, queued?: boolean): Promise<Tx> {
   if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
   if (amount > (await simulatedProvider.getBalance())) throw new Error("Not enough balance for this amount.");
   if (weekSpend() + amount > weeklyLimit) throw new Error(`This would pass your weekly limit of ₦${weeklyLimit.toLocaleString("en-NG")}. Raise it in More to continue.`);
-  const tx: Tx = { id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString(), to, narration };
+  const tx: Tx = { id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString(), to, narration, queued };
   seed.push(tx);
   // Bank withdrawals start Pending, like the real flow (approval and signing), then complete after a few seconds.
-  if (narrationType === "send_to_bank") { tx.status = "pending"; setTimeout(() => { tx.status = "completed"; }, 4000); }
+  if (queued) { tx.status = "pending"; } else if (narrationType === "send_to_bank") { tx.status = "pending"; setTimeout(() => { tx.status = "completed"; save(); }, 4000); }
   return tx;
 }
-export const simulatedProvider: BankingProvider = {
+const base: BankingProvider = {
   simulated: true,
   async getBalance() {
     const net = seed.reduce((s, t) => s + (t.direction === "incoming" ? t.amount : -t.amount), 0);
@@ -42,8 +42,9 @@ export const simulatedProvider: BankingProvider = {
   listTransactions: () => wait([...seed].sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
   getDepositAccount: () => wait({ bank: "Sandbox Bank", number: "0123456789", name: "Bunch Dillon" }),
   getCard: () => wait(card),
-  sendMoney: (to, amount, narration) => spend(amount, `Sent to ${to.name}`, "send_to_friend", to, narration),
-  withdraw: (to, amount, narration) => spend(amount, `Sent to ${to.name}`, "send_to_bank", to, narration),
+  sendMoney: (to, amount, narration, queued) => spend(amount, `Sent to ${to.name}`, "send_to_friend", to, narration, queued),
+  withdraw: (to, amount, narration, queued) => spend(amount, `Sent to ${to.name}`, "send_to_bank", to, narration, queued),
+  async syncQueued() { const q = seed.filter((t) => t.queued); await wait(null, 1200); q.forEach((t) => { t.queued = false; t.status = "completed"; }); return q.length; },
   async reset() { seed.length = 0; goals.length = 0; opening = 0; weeklyLimit = 20000; plan = { essentials: 0, cash: 0, nextIncome: null, incomes: [] }; },
   getPlan: () => wait({ ...plan }, 150),
   async setPlan(p) { if (p.essentials < 0 || p.cash < 0) throw new Error("Amounts cannot be negative."); plan = { ...p }; },
@@ -62,3 +63,20 @@ export const simulatedProvider: BankingProvider = {
   issueCard() { card = testCard(String(1000 + Math.floor(Math.random() * 9000))); return wait(card, 600); },
   setCardStatus: (status) => { card = { ...card, status }; return wait(card, 250); },
 };
+
+// Offline support: the simulated data is saved on this device so it survives a reload.
+const SKEY = "sbms_sim_v1";
+function save() { try { localStorage.setItem(SKEY, JSON.stringify({ seed, goals, card, weeklyLimit, opening, plan })); } catch { /* storage unavailable */ } }
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(SKEY); if (!raw) return;
+    const s = JSON.parse(raw);
+    seed.splice(0, seed.length, ...s.seed); goals.splice(0, goals.length, ...s.goals);
+    card = s.card; weeklyLimit = s.weeklyLimit; opening = s.opening; plan = s.plan;
+    seed.forEach((t) => { if (t.status === "pending" && !t.queued && Date.now() - +new Date(t.createdAt) > 4000) t.status = "completed"; });
+  } catch { /* ignore unreadable saved data */ }
+}
+const MUTATORS = ["sendMoney", "withdraw", "contribute", "addGoal", "setLimit", "setPlan", "setCardStatus", "issueCard", "syncQueued", "reset"] as const;
+export const simulatedProvider: BankingProvider = { ...base };
+for (const m of MUTATORS) { const f = (base as any)[m]; (simulatedProvider as any)[m] = async (...a: any[]) => { const r = await f(...a); save(); return r; }; }
+loadSaved();

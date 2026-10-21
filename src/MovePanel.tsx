@@ -4,6 +4,7 @@ import { localScam, type Level } from "./scam";
 import { BANKS, lookup } from "./lookup";
 import { checkPayPin, hasPayPin, setPayPin } from "./paypin";
 import { naira } from "./txui";
+import { useOnline } from "./online";
 type Step = "home" | "form" | "review" | "pin";
 export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { acct: DepositAccount | null; onDone: () => void; txs: Tx[]; balance: number | null; onReceipt: (t: Tx) => void }) {
   const [copied, setCopied] = useState(false);
@@ -16,15 +17,16 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
   const [msg, setMsg] = useState(""), [busy, setBusy] = useState(false);
   const [fails, setFails] = useState(0), [lockUntil, setLockUntil] = useState(0);
   const [limit, setLimit] = useState(0);
+  const online = useOnline();
   const [check, setCheck] = useState<{ level: Level; reason: string; by: string } | null>(null);
   useEffect(() => { provider.getLimit().then(setLimit); }, [txs]);
   useEffect(() => {
     setName(""); setLookErr(""); setLooking(false);
     if (num.length !== 10) return;
     let live = true; setLooking(true);
-    lookup(kind, bank, num).then((r) => { if (!live) return; setLooking(false); if (r.ok) setName(r.name); else setLookErr(r.error); });
+    lookup(kind, bank, num, !online, txs.find((t) => t.to && t.to.account === num && t.to.bank === (kind === "sbms" ? "SBMS" : bank))?.to?.name).then((r) => { if (!live) return; setLooking(false); if (r.ok) setName(r.name); else setLookErr(r.error); });
     return () => { live = false; };
-  }, [num, bank, kind]);
+  }, [num, bank, kind, online]);
   const sim = provider.simulated && <span className="sim">Simulated</span>;
   const amount = +amt;
   const digits = (v: string) => v.replace(/\D/g, "");
@@ -68,7 +70,7 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
         setFails(f); throw new Error(`Wrong PIN. ${3 - f} attempt${3 - f === 1 ? "" : "s"} left.`);
       }
       const to = { name, account: num, bank: kind === "sbms" ? "SBMS" : bank };
-      const tx = kind === "sbms" ? await provider.sendMoney(to, amount, narr.trim() || undefined) : await provider.withdraw(to, amount, narr.trim() || undefined);
+      const tx = kind === "sbms" ? await provider.sendMoney(to, amount, narr.trim() || undefined, !online) : await provider.withdraw(to, amount, narr.trim() || undefined, !online);
       onDone(); reset(); onReceipt(tx);
     } catch (e: any) { setMsg(e.message ?? "Something went wrong."); }
     setBusy(false);
@@ -96,7 +98,7 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
     <h2>Review transfer</h2>
     <div className="panel">
       {([["To", name], ["Bank", kind === "sbms" ? "SBMS" : bank], ["Account", num], ["Amount", naira(amount)], ["Narration", narr.trim() || "None"]] as [string, string][]).map(([k, v]) => <div className="row" key={k}><span className="t2">{k}</span><strong>{v}</strong></div>)}
-      <p className="muted">{kind === "bank" ? "Bank transfers show as Pending first, then Sent." : "SBMS transfers arrive instantly."} Simulated: no money moves.</p>
+      <p className="muted">{!online ? "You are offline. This transfer will be queued and sent when you reconnect." : kind === "bank" ? "Bank transfers show as Pending first, then Sent." : "SBMS transfers arrive instantly."} Simulated: no money moves.</p>
       <button className="primary" onClick={() => { setPin(""); setPin2(""); setMsg(""); setStep("pin"); }}>Confirm</button>{sim}
     </div>
   </>);

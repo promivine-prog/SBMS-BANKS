@@ -10,6 +10,7 @@ export interface Tx {
   category?: Category;
   narration?: string;
   to?: Recipient;
+  queued?: boolean;
   createdAt: string; // ISO
 }
 export interface Goal { id: string; name: string; target: number; saved: number }
@@ -34,6 +35,7 @@ export interface BankingProvider {
   contribute(goalId: string, amount: number): Promise<void>;
   getLimit(): Promise<number>;
   setLimit(weekly: number): Promise<void>;
-  sendMoney(to: Recipient, amount: number, narration?: string): Promise<Tx>;
-  withdraw(to: Recipient, amount: number, narration?: string): Promise<Tx>;
+  sendMoney(to: Recipient, amount: number, narration?: string, queued?: boolean): Promise<Tx>;
+  withdraw(to: Recipient, amount: number, narration?: string, queued?: boolean): Promise<Tx>;
+  syncQueued(): Promise<number>;
 }

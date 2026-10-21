@@ -30,6 +30,7 @@ export default function Privacy({ onLock, onReset }: { onLock: () => void; onRes
     <div className="panel"><strong>Delete my data</strong><p className="muted">Removes transactions, goals, plan and PIN. Type DELETE to confirm.</p>
       <input className="field" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="DELETE" />
       <button className="primary" disabled={confirm !== "DELETE"} onClick={del}>Delete everything</button></div>
+    <div className="panel"><strong>Demo data</strong><p className="muted">Restore the original demo data and reload the app.</p><button className="ghost" onClick={() => { try { localStorage.removeItem("sbms_sim_v1"); } catch { /* ignore */ } location.reload(); }}>Restore demo data</button></div>
     {msg && <p className="muted" role="status">{msg}</p>}
   </>);
 }

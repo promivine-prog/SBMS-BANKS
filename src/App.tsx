@@ -11,6 +11,7 @@ import { LegalLinks } from "./Legal";
 import History from "./History";
 import { tr } from "./i18n";
 import Receipt from "./Receipt";
+import { useOnline } from "./online";
 import { statusLabel } from "./txui";
 import AuthScreen from "./Auth";
 import BmoniChip from "./BmoniChip";
@@ -139,6 +140,8 @@ export default function App() {
   const [settings, setSettings] = useState(false);
   const [history, setHistory] = useState(false);
   const [receipt, setReceipt] = useState<Tx | null>(null);
+  const online = useOnline();
+  useEffect(() => { if (online) provider.syncQueued().then((n) => { if (n) refresh(); }); }, [online]);
   const [, setTick] = useState(0);
   useEffect(() => { if (!txs.some((t) => t.status === "pending")) return; const id = setInterval(refresh, 2000); return () => clearInterval(id); }, [txs]);
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
@@ -146,8 +149,9 @@ export default function App() {
   if (locked) return <LockScreen onUnlock={() => setLocked(false)} />;
   return (
     <div className="app">
-      <header><strong>SBMS</strong><BmoniChip /><button className="gear" aria-label="Settings" onClick={() => { setSettings(true); setHistory(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></header>
+      <header><strong>SBMS</strong>{online ? <BmoniChip /> : <span className="chip off">Offline</span>}<button className="gear" aria-label="Settings" onClick={() => { setSettings(true); setHistory(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></header>
       <main key={epoch}>
+        {!online && <div className="warn" role="status"><strong>You are offline.</strong> You can still view your data, use your plan, lessons and simulator. Transfers to people you have paid before are queued and sent when you reconnect.</div>}
         {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><div className="panel"><div className="t2">Signed in as</div><div className="t1">{displayName()}</div><button className="ghost" onClick={() => { logout(); setAuthed(false); }}>Log out</button></div><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /><LegalLinks /></>)}
         {history && !settings && <History txs={txs} onBack={() => setHistory(false)} onOpen={setReceipt} />}
         {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} onOpen={setReceipt} />}

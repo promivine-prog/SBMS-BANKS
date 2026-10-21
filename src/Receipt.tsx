@@ -23,7 +23,7 @@ async function draw(t: Tx) {
   x.font = `400 28px ${F}`; x.fillText("Transaction receipt (simulated)", 48, 116);
   const pending = t.status === "pending";
   x.fillStyle = pending ? "#7A4B00" : "#14532D"; x.font = `700 36px ${F}`;
-  x.fillText(pending ? "Pending" : t.direction === "incoming" ? "Received" : "Sent successfully", 48, 230);
+  x.fillText(pending ? (t.queued ? "Queued (offline)" : "Pending") : t.direction === "incoming" ? "Received" : "Sent successfully", 48, 230);
   x.fillStyle = "#1C0C1C"; x.font = `700 84px ${F}`; x.fillText((t.direction === "incoming" ? "+" : "-") + naira(t.amount), 48, 330);
   let y = 420;
   r.forEach(([k, v]) => {
@@ -60,7 +60,7 @@ export default function Receipt({ tx, onClose }: { tx: Tx; onClose: () => void }
       <div className="acct">{tx.direction === "incoming" ? "+" : "-"}{naira(tx.amount)}</div>
       {rows(tx).map(([k, v]) => <div className="row" key={k}><span className="t2">{k}</span><strong>{v}</strong></div>)}
       <p className="muted">{NOTE}</p>{provider.simulated && <span className="sim">Simulated</span>}</div>
-    {pending && <p className="muted" role="status">Pending: this changes to Sent in a few seconds.</p>}
+    {pending && <p className="muted" role="status">{tx.queued ? "You were offline. This transfer is queued and will be sent when you reconnect." : "Pending: this changes to Sent in a few seconds."}</p>}
     <button className="primary" onClick={share}>Share receipt</button>
     <button className="ghost" onClick={async () => { download(await makeBlob(), name); setMsg("Receipt downloaded."); }}>Download image</button>
     {msg && <p className="muted" role="status">{msg}</p>}</div></div>);
