@@ -8,11 +8,14 @@ export interface Tx {
   description: string;
   narrationType: "fund_bank" | "send_to_bank" | "send_to_friend" | "card_transaction_charge" | "service_fee";
   category?: Category;
+  narration?: string;
+  to?: Recipient;
   createdAt: string; // ISO
 }
 export interface Goal { id: string; name: string; target: number; saved: number }
 export interface Income { id: string; name: string; amount: number; date: string }
 export interface Plan { essentials: number; cash: number; nextIncome: string | null; incomes: Income[] }
+export interface Recipient { name: string; account: string; bank: string }
 export interface CardInfo { id: string; name: string; last4: string; number: string; expiry: string; cvv: string; status: "ACTIVE" | "BLOCKED" }
 export interface DepositAccount { bank: string; number: string; name: string }
 export interface BankingProvider {
@@ -31,6 +34,6 @@ export interface BankingProvider {
   contribute(goalId: string, amount: number): Promise<void>;
   getLimit(): Promise<number>;
   setLimit(weekly: number): Promise<void>;
-  sendMoney(to: string, amount: number): Promise<Tx>;
-  withdraw(bank: string, account: string, amount: number): Promise<Tx>;
+  sendMoney(to: Recipient, amount: number, narration?: string): Promise<Tx>;
+  withdraw(to: Recipient, amount: number, narration?: string): Promise<Tx>;
 }

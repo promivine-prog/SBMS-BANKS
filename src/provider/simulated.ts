@@ -1,4 +1,4 @@
-import type { BankingProvider, CardInfo, Goal, Plan, Tx } from "./types";
+import type { BankingProvider, CardInfo, Goal, Plan, Recipient, Tx } from "./types";
 const wait = <T,>(v: T, ms = 350) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 const ago = (days: number, hour: number) => {
   const d = new Date(); d.setDate(d.getDate() - days); d.setHours(hour, 15, 0, 0); return d.toISOString();
@@ -23,11 +23,11 @@ const in9 = new Date(Date.now() + 9 * 864e5).toISOString().slice(0, 10);
 let plan: Plan = { essentials: 6000, cash: 0, nextIncome: in9, incomes: [{ id: "i1", name: "Allowance from Mum", amount: 40000, date: in9 }] };
 const goals: Goal[] = [{ id: "g1", name: "New laptop", target: 150000, saved: 20000 }];
 const weekSpend = () => seed.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && Date.now() - +new Date(t.createdAt) < 7 * 864e5).reduce((s, t) => s + t.amount, 0);
-async function spend(amount: number, description: string, narrationType: Tx["narrationType"]): Promise<Tx> {
+async function spend(amount: number, description: string, narrationType: Tx["narrationType"], to?: Recipient, narration?: string): Promise<Tx> {
   if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
   if (amount > (await simulatedProvider.getBalance())) throw new Error("Not enough balance for this amount.");
   if (weekSpend() + amount > weeklyLimit) throw new Error(`This would pass your weekly limit of ₦${weeklyLimit.toLocaleString("en-NG")}. Raise it in More to continue.`);
-  const tx: Tx = { id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString() };
+  const tx: Tx = { id: "s" + Date.now(), direction: "outgoing", amount, status: "completed", description, narrationType, category: "Other", createdAt: new Date().toISOString(), to, narration };
   seed.push(tx);
   // Bank withdrawals start Pending, like the real flow (approval and signing), then complete after a few seconds.
   if (narrationType === "send_to_bank") { tx.status = "pending"; setTimeout(() => { tx.status = "completed"; }, 4000); }
@@ -42,8 +42,8 @@ export const simulatedProvider: BankingProvider = {
   listTransactions: () => wait([...seed].sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
   getDepositAccount: () => wait({ bank: "Sandbox Bank", number: "0123456789", name: "Bunch Dillon" }),
   getCard: () => wait(card),
-  sendMoney: (to, amount) => spend(amount, `Sent to ${to}`, "send_to_friend"),
-  withdraw: (bank, account, amount) => spend(amount, `Withdrawal to ${bank} ••${account.slice(-4)}`, "send_to_bank"),
+  sendMoney: (to, amount, narration) => spend(amount, `Sent to ${to.name}`, "send_to_friend", to, narration),
+  withdraw: (to, amount, narration) => spend(amount, `Sent to ${to.name}`, "send_to_bank", to, narration),
   async reset() { seed.length = 0; goals.length = 0; opening = 0; weeklyLimit = 20000; plan = { essentials: 0, cash: 0, nextIncome: null, incomes: [] }; },
   getPlan: () => wait({ ...plan }, 150),
   async setPlan(p) { if (p.essentials < 0 || p.cash < 0) throw new Error("Amounts cannot be negative."); plan = { ...p }; },

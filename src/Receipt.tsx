@@ -4,10 +4,14 @@ import { naira, refOf, statusLabel, typeLabel } from "./txui";
 // Receipts are watermarked: while the wallet is simulated, a receipt must never look like real proof of payment.
 const NOTE = "Simulated demo receipt. No money moved. Not proof of payment.";
 const when = (t: Tx) => new Date(t.createdAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
-const rows = (t: Tx): [string, string][] => [
-  ["Type", typeLabel(t)], [t.direction === "incoming" ? "From" : "To", t.description.replace(/^(Sent to|Withdrawal to) /, "")],
-  ["Category", t.category ?? "Deposit"], ["Date and time", when(t)], ["Reference", refOf(t)], ["Status", statusLabel(t)],
-];
+const rows = (t: Tx): [string, string][] => {
+  const r: [string, string][] = [["Type", typeLabel(t)]];
+  if (t.to) r.push(["To", t.to.name], ["Bank", t.to.bank], ["Account", t.to.account]);
+  else r.push([t.direction === "incoming" ? "From" : "To", t.description.replace(/^(Sent to|Withdrawal to) /, "")]);
+  if (t.narration) r.push(["Narration", t.narration]);
+  r.push(["Date and time", when(t)], ["Reference", refOf(t)], ["Status", statusLabel(t)]);
+  return r;
+};
 async function draw(t: Tx) {
   try { await (document as any).fonts?.ready; } catch { /* ignore */ }
   const W = 800, r = rows(t), H = 420 + r.length * 78 + 170, F = "'Rethink Sans', system-ui, sans-serif";
