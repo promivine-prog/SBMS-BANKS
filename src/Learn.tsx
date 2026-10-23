@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { earn } from "./rank";
 interface Lesson { title: string; body: string; q: string; options: string[]; answer: number }
 const LESSONS: Lesson[] = [
   { title: "Pay yourself first", body: "When money arrives, set aside a small fixed amount before you spend. Even ₦500 a week adds up to ₦26,000 in a year.",
@@ -24,7 +25,7 @@ export default function Learn() {
         {l.options.map((o, j) => {
           const done = picked[i] !== undefined;
           const cls = done ? (j === l.answer ? " good" : j === picked[i] ? " bad" : "") : "";
-          return <button key={o} className={"opt" + cls} disabled={done} onClick={() => setPicked({ ...picked, [i]: j })}>{o}</button>;
+          return <button key={o} className={"opt" + cls} disabled={done} onClick={() => { setPicked({ ...picked, [i]: j }); if (j === l.answer) earn(`lesson:${i}`); }}>{o}</button>;
         })}
         {picked[i] !== undefined && <p className="muted" role="status">{picked[i] === l.answer ? "Correct." : `Not quite. The answer is: ${l.options[l.answer]}.`}</p>}
       </details>))}

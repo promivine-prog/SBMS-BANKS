@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { provider, type Plan } from "./provider";
 import { tr } from "./i18n";
 import { runway } from "./runway";
+import { earn } from "./rank";
 const naira = (n: number) => "₦" + Math.round(n).toLocaleString("en-NG");
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const EMPTY: Plan = { essentials: 0, cash: 0, nextIncome: null, incomes: [] };
@@ -43,7 +44,7 @@ export default function PlanCard({ balance }: { balance: number | null }) {
           <ol className="steps"><li>Pay for essentials first: food, transport, data.</li><li>Pause anything you can wait on until your next income.</li><li>Tell someone you trust early. Asking for help is a plan, not a failure.</li><li>Update your expected incomes if anything has changed.</li></ol></div>)}
       <input className="field" placeholder="Essentials to protect (₦)" inputMode="numeric" value={ess} onChange={(e) => setEss(e.target.value.replace(/\D/g, ""))} />
       <input className="field" placeholder="Cash on hand (₦)" inputMode="numeric" value={cash} onChange={(e) => setCash(e.target.value.replace(/\D/g, ""))} />
-      <button className="primary" onClick={() => persist({ ...saved, essentials: +ess || 0, cash: +cash || 0 }, "Plan saved.")}>Save plan</button>
+      <button className="primary" onClick={() => { persist({ ...saved, essentials: +ess || 0, cash: +cash || 0 }, "Plan saved."); earn("plan_update"); }}>Save plan</button>
       <h3 className="day">Expected income (not counted in Available now until it arrives)</h3>
       {sorted.map((i) => (<div className="tx" key={i.id}><div className="grow"><div className="t1">{i.name}</div><div className="t2">{i.date}</div></div><div className="amt">{naira(i.amount)}</div>
         <button className="chipbtn" onClick={() => persist({ ...saved, incomes: saved.incomes.filter((x) => x.id !== i.id) }, "Income removed.")}>Remove</button></div>))}

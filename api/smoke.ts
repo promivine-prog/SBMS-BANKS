@@ -1,7 +1,8 @@
+declare const process: any; // Node global; avoids needing @types/node
 // Open /api/smoke in a browser. Read-only: reports which settings exist and whether B Moni and Supabase answer.
 // It never returns any key values.
 // New-style sb_secret_ keys go in "apikey" only; legacy service_role JWTs also go in Authorization.
-const sbAuth = (k: string) => (k.startsWith("sb_") ? { apikey: k } : { apikey: k, Authorization: `Bearer ${k}` });
+const sbAuth = (k: string): Record<string, string> => (k.startsWith("sb_") ? { apikey: k } : { apikey: k, Authorization: `Bearer ${k}` });
 export default async function handler(_req: any, res: any) {
   const e = process.env;
   const env = Object.fromEntries(

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { provider, type Goal, type Tx } from "./provider";
 import Learn from "./Learn";
 import Simulator from "./Simulator";
+import { earn } from "./rank";
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG");
 export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void }) {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -23,7 +24,7 @@ export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void
       <div className="track"><div style={{ width: pct(week, limit), background: week > limit * 0.8 ? "var(--err)" : undefined }} /></div>
       <p className="muted">Sends and withdrawals that pass this limit are blocked until you raise it.</p>
       <div className="inline"><input className="field" placeholder="New weekly limit (₦)" inputMode="numeric" value={lim} onChange={(e) => setLim(e.target.value.replace(/\D/g, ""))} />
-        <button className="primary" onClick={() => run(() => provider.setLimit(+lim), "Limit updated.")}>Set limit</button></div>{sim}
+        <button className="primary" onClick={() => run(async () => { await provider.setLimit(+lim); earn("limit_set"); }, "Limit updated.")}>Set limit</button></div>{sim}
     </div>
     <h2>Savings goals</h2>
     {goals.map((g) => (
@@ -31,7 +32,7 @@ export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void
         <div className="row"><strong>{g.name}</strong><span>{naira(g.saved)} of {naira(g.target)}</span></div>
         <div className="track"><div style={{ width: pct(g.saved, g.target) }} /></div>
         <div className="inline"><input className="field" placeholder="Amount to save (₦)" inputMode="numeric" value={add[g.id] ?? ""} onChange={(e) => setAdd({ ...add, [g.id]: e.target.value.replace(/\D/g, "") })} />
-          <button className="primary" onClick={() => run(() => provider.contribute(g.id, +(add[g.id] ?? 0)), `Saved to ${g.name}.`)}>Save</button></div>{sim}
+          <button className="primary" onClick={() => run(async () => { await provider.contribute(g.id, +(add[g.id] ?? 0)); earn("goal_save"); }, `Saved to ${g.name}.`)}>Save</button></div>{sim}
       </div>))}
     <div className="panel"><strong>New goal</strong>
       <input className="field" placeholder="Goal name" value={name} onChange={(e) => setName(e.target.value)} />

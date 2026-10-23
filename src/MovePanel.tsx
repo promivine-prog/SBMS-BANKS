@@ -5,6 +5,7 @@ import { BANKS, lookup } from "./lookup";
 import { checkPayPin, hasPayPin, setPayPin } from "./paypin";
 import { naira } from "./txui";
 import { useOnline } from "./online";
+import { earn } from "./rank";
 type Step = "home" | "form" | "review" | "pin";
 export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { acct: DepositAccount | null; onDone: () => void; txs: Tx[]; balance: number | null; onReceipt: (t: Tx) => void }) {
   const [copied, setCopied] = useState(false);
@@ -56,7 +57,7 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
           if (order[ai] >= order[level]) { level = ai; reason = j.answer.slice(m[0].length).trim() || reason; } by = `AI check · ${j.provider}`; }
       }
     } catch { /* keep the rule-based result */ }
-    setCheck({ level, reason, by });
+    setCheck({ level, reason, by }); earn("scam_check");
   };
   const create = !hasPayPin();
   const pay = async () => {

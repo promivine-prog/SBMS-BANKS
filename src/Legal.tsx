@@ -7,25 +7,26 @@ const DOCS: Record<DocKey, { title: string; sections: [string, string][] }> = {
     ["2. No real money", "SBMS does not hold, move or transfer real money. Balances, transactions, cards and account numbers shown are simulated test data. Do not enter real card numbers, BVN, NIN or passwords you use elsewhere."],
     ["3. Not financial advice", "Money plans, daily guides, coach answers, scam checks and simulator results are estimates for learning. They are hypothetical, not promises or advice. AI answers can be wrong. Check important decisions with your bank or a qualified adviser."],
     ["4. Your account", "Your demo account is saved only on your own device. You are responsible for your password and PIN. If you forget them, we cannot recover them, and clearing this site's data in your browser removes the account."],
-    ["5. Acceptable use", "Use SBMS lawfully. Do not try to disrupt it, probe its servers, or misuse the AI features."],
+    ["5. Acceptable use", "Use SBMS lawfully. Do not try to disrupt it, probe its servers, or misuse the AI features. Leaderboard nicknames must be appropriate, and we may remove entries that are not."],
     ["6. Availability and risk", "The prototype may change, break or be taken down at any time without notice. It is provided as is, without warranties. To the extent the law allows, the team is not liable for losses from using it."],
     ["7. Changes and contact", "We may update these terms and will show the version date. Contact the team through the project's GitHub repository: github.com/promivine-prog/SBMS-BANKS."],
   ] },
   privacy: { title: "Privacy Policy", sections: [
     ["1. What stays on your device", "Your demo account (name, email and a hashed password), your PIN hash, your language choice and some display preferences are stored in your browser. We do not receive your email or password. The simulated wallet data lives in memory and is lost when you reload."],
-    ["2. What leaves your device", "When you use the money coach or the check-before-sending feature, your question and a summary of the simulated data (balance, transaction descriptions, amounts, categories and dates) are sent to our server, which forwards them to an AI provider (Google Gemini, or Anthropic if configured) to produce an answer. Do not type personal or sensitive information into the coach. Google's free-tier terms may allow it to use inputs to improve its products. We also run a status check against B Moni's sandbox that carries no user data."],
-    ["3. What we do not do", "We use no advertising, no analytics and no tracking cookies. Our database connection currently stores no user data."],
-    ["4. Your choices", "In Settings you can export your data, delete it, remove your PIN or log out. Clearing this site's data in your browser removes everything stored on your device."],
-    ["5. Age", "If you are under 18, use SBMS together with a parent or guardian."],
-    ["6. Security", "We use HTTPS and keep service keys on the server, but no system is perfectly secure and this is a prototype. Do not rely on it for sensitive information."],
-    ["7. Changes and legal note", "We may update this policy and will show the version date. If SBMS became a real service, it would need a full legal review and compliance with Nigeria's data protection law."],
+    ["2. What leaves your device", "When you use the money coach or the check-before-sending feature, your question and a summary of the simulated data (balance, transaction descriptions, amounts, categories and dates) are sent to our server, which forwards them to an AI provider (Google Gemini, or Anthropic if configured) to produce an answer. Do not type personal or sensitive information into the coach. Google's free-tier terms may allow it to use inputs to improve its products. We also run a status check against B Moni's sandbox that carries no user data. If you join the optional leaderboard, your nickname and points are also sent to our server and shown to other users."],
+    ["3. What we do not do", "We use no advertising, no analytics and no tracking cookies. Apart from the optional leaderboard below, our database stores no user data."],
+    ["4. The public leaderboard (optional)", "If you join, we store your chosen nickname, your points, streak and activity counts, and a random device ID with a hashed secret, in our database. Your nickname and points are shown publicly to other users. We never store your name, email, balances or transactions there. You can leave at any time in Rewards, or by deleting your data in Settings, which removes your entry."],
+    ["5. Your choices", "In Settings you can export your data, delete it, remove your PIN or log out. Clearing this site's data in your browser removes everything stored on your device."],
+    ["6. Age", "If you are under 18, use SBMS together with a parent or guardian."],
+    ["7. Security", "We use HTTPS and keep service keys on the server, but no system is perfectly secure and this is a prototype. Do not rely on it for sensitive information."],
+    ["8. Changes and legal note", "We may update this policy and will show the version date. If SBMS became a real service, it would need a full legal review and compliance with Nigeria's data protection law."],
   ] },
 };
 export default function Legal({ doc, onClose }: { doc: DocKey; onClose: () => void }) {
   const d = DOCS[doc];
   return (<div className="legal" role="dialog" aria-modal="true" aria-label={d.title}><div className="legal-box">
     <div className="row"><h2>{d.title}</h2><button className="chipbtn" onClick={onClose}>Close</button></div>
-    <p className="muted">Version 1 · 16 October 2026</p>
+    <p className="muted">Version 2 · 16 October 2026</p>
     {d.sections.map(([h, t]) => <section key={h}><h3 className="day">{h}</h3><p>{t}</p></section>)}
     <button className="primary" onClick={onClose}>Close</button></div></div>);
 }

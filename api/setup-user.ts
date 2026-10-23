@@ -1,3 +1,4 @@
+declare const process: any; // Node global; avoids needing @types/node
 // Creates our ONE sandbox user on B Moni and remembers it in Supabase. Safe to open twice: it reuses the stored user.
 // Usage: /api/setup-user?confirm=yes            (Bunch Dillon, the default)
 //        /api/setup-user?confirm=yes&persona=samson   (only if Bunch is taken by another team)
@@ -6,7 +7,7 @@ const PERSONAS: Record<string, { firstName: string; lastName: string; phoneNumbe
   samson: { firstName: "Samson", lastName: "Jabo", phoneNumber: "+2348000000001", bvn: "22222222222" },
 };
 // New-style sb_secret_ keys go in "apikey" only; legacy service_role JWTs also go in Authorization.
-const sbAuth = (k: string) => (k.startsWith("sb_") ? { apikey: k } : { apikey: k, Authorization: `Bearer ${k}` });
+const sbAuth = (k: string): Record<string, string> => (k.startsWith("sb_") ? { apikey: k } : { apikey: k, Authorization: `Bearer ${k}` });
 export default async function handler(req: any, res: any) {
   const e = process.env;
   const persona = String(req.query?.persona ?? "bunch");

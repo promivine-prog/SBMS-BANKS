@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Tx } from "./provider";
 import { localCoach } from "./coach";
 import { tr } from "./i18n";
+import { earn } from "./rank";
 const PROMPTS = ["Can I afford ₦5,000 shoes?", "Where can I cut spending?", "Is anything suspicious?"];
 export default function Coach({ txs, balance }: { txs: Tx[]; balance: number | null }) {
   const [q, setQ] = useState("");
@@ -9,7 +10,7 @@ export default function Coach({ txs, balance }: { txs: Tx[]; balance: number | n
   const [busy, setBusy] = useState(false);
   async function ask(question: string) {
     if (balance === null || !question.trim()) return;
-    setQ(question); setBusy(true);
+    setQ(question); setBusy(true); earn("coach_question");
     const slim = txs.map((t) => ({ description: t.description, amount: t.amount, direction: t.direction, category: t.category, date: t.createdAt.slice(0, 10) }));
     try {
       const r = await fetch("/api/coach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, balance, txs: slim }) });

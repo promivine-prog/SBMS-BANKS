@@ -12,6 +12,7 @@ import History from "./History";
 import { tr } from "./i18n";
 import Receipt from "./Receipt";
 import { useOnline } from "./online";
+import Rewards, { RewardsAgent } from "./Rewards";
 import { statusLabel } from "./txui";
 import AuthScreen from "./Auth";
 import BmoniChip from "./BmoniChip";
@@ -139,9 +140,12 @@ export default function App() {
   const [epoch, setEpoch] = useState(0);
   const [settings, setSettings] = useState(false);
   const [history, setHistory] = useState(false);
+  const [rewards, setRewards] = useState(false);
+  const [toast, setToast] = useState("");
   const [receipt, setReceipt] = useState<Tx | null>(null);
   const online = useOnline();
   useEffect(() => { if (online) provider.syncQueued().then((n) => { if (n) refresh(); }); }, [online]);
+  useEffect(() => { const h = (e: Event) => { const d = (e as CustomEvent).detail; setToast(`+${d.awarded} points`); setTimeout(() => setToast(""), 2500); }; window.addEventListener("sbms:points", h); return () => window.removeEventListener("sbms:points", h); }, []);
   const [, setTick] = useState(0);
   useEffect(() => { if (!txs.some((t) => t.status === "pending")) return; const id = setInterval(refresh, 2000); return () => clearInterval(id); }, [txs]);
   const toggle = () => card && provider.setCardStatus(card.status === "ACTIVE" ? "BLOCKED" : "ACTIVE").then(setCard);
@@ -149,20 +153,23 @@ export default function App() {
   if (locked) return <LockScreen onUnlock={() => setLocked(false)} />;
   return (
     <div className="app">
-      <header><strong>SBMS</strong>{online ? <BmoniChip /> : <span className="chip off">Offline</span>}<button className="gear" aria-label="Settings" onClick={() => { setSettings(true); setHistory(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></header>
+      <header><strong>SBMS</strong>{online ? <BmoniChip /> : <span className="chip off">Offline</span>}<div className="row"><button className="gear" aria-label="Rewards and leaderboard" onClick={() => { setRewards(true); setSettings(false); setHistory(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" /></svg></button><button className="gear" aria-label="Settings" onClick={() => { setSettings(true); setHistory(false); setRewards(false); }}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></button></div></header>
       <main key={epoch}>
         {!online && <div className="warn" role="status"><strong>You are offline.</strong> You can still view your data, use your plan, lessons and simulator. Transfers to people you have paid before are queued and sent when you reconnect.</div>}
         {settings && (<><button className="back" onClick={() => setSettings(false)}>← {tr("Back")}</button><h2>{tr("Settings")}</h2><div className="panel"><div className="t2">Signed in as</div><div className="t1">{displayName()}</div><button className="ghost" onClick={() => { logout(); setAuthed(false); }}>Log out</button></div><Language onChange={() => setTick((x) => x + 1)} /><Privacy onLock={() => hasPin() && setLocked(true)} onReset={() => { setEpoch((e) => e + 1); refresh(); }} /><LegalLinks /></>)}
         {history && !settings && <History txs={txs} onBack={() => setHistory(false)} onOpen={setReceipt} />}
-        {!settings && !history && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} onOpen={setReceipt} />}
-        {!settings && !history && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} onReceipt={setReceipt} />}
-        {!settings && !history && tab === "cards" && <Cards card={card} toggle={toggle} onNew={() => provider.issueCard().then(setCard)} />}
-        {!settings && !history && tab === "insights" && <Insights txs={txs} balance={balance} />}
-        {!settings && !history && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
+        {rewards && !settings && <Rewards onBack={() => setRewards(false)} />}
+        {!settings && !history && !rewards && tab === "home" && <Home balance={balance} txs={txs} go={setTab} onHistory={() => setHistory(true)} onOpen={setReceipt} />}
+        {!settings && !history && !rewards && tab === "move" && <MovePanel acct={acct} onDone={refresh} txs={txs} balance={balance} onReceipt={setReceipt} />}
+        {!settings && !history && !rewards && tab === "cards" && <Cards card={card} toggle={toggle} onNew={() => provider.issueCard().then(setCard)} />}
+        {!settings && !history && !rewards && tab === "insights" && <Insights txs={txs} balance={balance} />}
+        {!settings && !history && !rewards && tab === "more" && <MoreTab txs={txs} onDone={refresh} />}
       </main>
+      <RewardsAgent txs={txs} online={online} />
+      {toast && <div className="toast" role="status">{toast}</div>}
       {receipt && <Receipt tx={txs.find((t) => t.id === receipt.id) ?? receipt} onClose={() => setReceipt(null)} />}
       <nav>{(Object.keys(LABELS) as Tab[]).map((t) => (
-        <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSettings(false); setHistory(false); }} aria-label={LABELS[t]}>
+        <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSettings(false); setHistory(false); setRewards(false); }} aria-label={LABELS[t]}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS[t]} /></svg>
           <span>{tr(LABELS[t])}</span>
         </button>))}
