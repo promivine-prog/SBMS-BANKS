@@ -10,6 +10,7 @@ const RULES: Record<string, { pts: number; perDay?: number; once?: boolean }> = 
   daily_checkin: { pts: 5, perDay: 1 }, under_limit: { pts: 5, perDay: 1 }, lesson: { pts: 10, once: true },
   goal_save: { pts: 5, perDay: 2 }, scam_check: { pts: 3, perDay: 3 }, coach_question: { pts: 2, perDay: 3 },
   plan_update: { pts: 5, perDay: 1 }, limit_set: { pts: 10, once: true }, pin_set: { pts: 10, once: true },
+  daily_tip: { pts: 5, perDay: 1 }, smoother_start: { pts: 10, once: true }, smoother_complete: { pts: 30, once: true },
 };
 async function sha(s: string) {
   const b = await (globalThis as any).crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));

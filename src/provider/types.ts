@@ -17,6 +17,7 @@ export interface Goal { id: string; name: string; target: number; saved: number 
 export interface Income { id: string; name: string; amount: number; date: string }
 export interface Plan { essentials: number; cash: number; nextIncome: string | null; incomes: Income[] }
 export interface Recipient { name: string; account: string; bank: string }
+export interface Smoother { total: number; days: number; daily: number; releasedDays: number; startDay: string; status: "active" | "completed" | "broken" }
 export interface CardInfo { id: string; name: string; last4: string; number: string; expiry: string; cvv: string; status: "ACTIVE" | "BLOCKED" }
 export interface DepositAccount { bank: string; number: string; name: string }
 export interface BankingProvider {
@@ -38,4 +39,8 @@ export interface BankingProvider {
   sendMoney(to: Recipient, amount: number, narration?: string, queued?: boolean): Promise<Tx>;
   withdraw(to: Recipient, amount: number, narration?: string, queued?: boolean): Promise<Tx>;
   syncQueued(): Promise<number>;
+  getSmoother(): Promise<Smoother | null>;
+  startSmoother(total: number, days: number): Promise<Smoother>;
+  breakSmoother(): Promise<Smoother>;
+  clearSmoother(): Promise<void>;
 }

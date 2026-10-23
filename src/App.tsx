@@ -13,6 +13,7 @@ import { tr } from "./i18n";
 import Receipt from "./Receipt";
 import { useOnline } from "./online";
 import Rewards, { RewardsAgent } from "./Rewards";
+import Tip from "./Tip";
 import { statusLabel } from "./txui";
 import AuthScreen from "./Auth";
 import BmoniChip from "./BmoniChip";
@@ -74,6 +75,7 @@ function Home({ balance, txs, go, onHistory, onOpen }: { balance: number | null;
         <button key={a} onClick={() => go(a === "Cards" ? "cards" : "move")}>{tr(a)}</button>
       ))}
     </div>
+    <Tip />
     <PlanCard balance={balance} />
     <div className="row"><h2>{tr("Recent activity")}</h2><button className="gear" aria-label={tr("Transaction history")} onClick={onHistory}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></button></div>
     <TxList txs={txs} onOpen={onOpen} />
@@ -104,7 +106,7 @@ function Cards({ card, toggle, onNew }: { card: CardInfo | null; toggle: () => v
 }
 
 function Insights({ txs, balance }: { txs: Tx[]; balance: number | null }) {
-  const spend = txs.filter((t) => t.direction === "outgoing");
+  const spend = txs.filter((t) => t.direction === "outgoing" && t.category !== "Savings");
   const byCat = useMemo(() => {
     const m = new Map<string, number>();
     spend.forEach((t) => m.set(t.category ?? "Other", (m.get(t.category ?? "Other") ?? 0) + t.amount));
