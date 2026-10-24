@@ -18,7 +18,7 @@ export function RewardsAgent({ txs, online }: { txs: Tx[]; online: boolean }) {
   }, [online, txs.length]);
   return null;
 }
-const EARN: [string, string][] = [["Open the app each day", "5 + streak bonus"], ["Stay under your weekly limit", "5 a day"], ["Pass a lesson quiz", "10 each"], ["Save to a goal", "5 (twice a day)"], ["Use the scam check", "3 (3 a day)"], ["Ask the coach", "2 (3 a day)"], ["Update your plan", "5 a day"], ["Set a weekly limit", "10 once"], ["Set an app lock", "10 once"], ["Read the tip of the day", "5 a day"], ["Start an Allowance Smoother", "10 once"], ["Finish an Allowance Smoother", "30 once"]];
+const EARN: [string, string][] = [["Open the app each day", "5 + streak bonus"], ["Stay under your weekly limit", "5 a day"], ["Pass a lesson quiz", "10 each"], ["Save to a goal", "5 (twice a day)"], ["Use the scam check", "3 (3 a day)"], ["Ask the coach", "2 (3 a day)"], ["Update your plan", "5 a day"], ["Set a weekly limit", "10 once"], ["Set an app lock", "10 once"], ["Read the tip of the day", "5 a day"], ["Start an Allowance Smoother", "10 once"], ["Finish an Allowance Smoother", "30 once"], ["Set up a semester vault", "10 once"], ["Pay fees from the vault", "20 once"]];
 export default function Rewards({ onBack }: { onBack: () => void }) {
   const online = useOnline();
   const [profile, setProfile] = useState(getProfile());

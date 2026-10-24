@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { provider, type DepositAccount, type Tx } from "./provider";
+import { provider, type DepositAccount, type Tx, type Vault } from "./provider";
 import { localScam, type Level } from "./scam";
 import { BANKS, lookup } from "./lookup";
 import { checkPayPin, hasPayPin, setPayPin } from "./paypin";
@@ -19,8 +19,10 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
   const [fails, setFails] = useState(0), [lockUntil, setLockUntil] = useState(0);
   const [limit, setLimit] = useState(0);
   const online = useOnline();
+  const [vault, setVault] = useState<Vault | null>(null);
+  const [guideWarn, setGuideWarn] = useState(false);
   const [check, setCheck] = useState<{ level: Level; reason: string; by: string } | null>(null);
-  useEffect(() => { provider.getLimit().then(setLimit); }, [txs]);
+  useEffect(() => { provider.getLimit().then(setLimit); provider.getVault().then(setVault); }, [txs]);
   useEffect(() => {
     setName(""); setLookErr(""); setLooking(false);
     if (num.length !== 10) return;
@@ -32,7 +34,7 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
   const amount = +amt;
   const digits = (v: string) => v.replace(/\D/g, "");
   const week = txs.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && Date.now() - +new Date(t.createdAt) < 7 * 864e5).reduce((s, t) => s + t.amount, 0);
-  const reset = () => { setStep("home"); setNum(""); setAmt(""); setNarr(""); setPin(""); setPin2(""); setCheck(null); setFails(0); setMsg(""); };
+  const reset = () => { setGuideWarn(false); setStep("home"); setNum(""); setAmt(""); setNarr(""); setPin(""); setPin2(""); setCheck(null); setFails(0); setMsg(""); };
   const start = (k: "sbms" | "bank") => { setKind(k); setMsg(""); setCheck(null); setStep("form"); };
   const next = () => {
     setMsg("");
@@ -40,6 +42,8 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
     if (!(amount > 0)) { setMsg("Enter an amount above ₦0."); return; }
     if (balance !== null && amount > balance) { setMsg("Not enough balance for this amount."); return; }
     if (limit && week + amount > limit) { setMsg(`This would pass your weekly limit of ${naira(limit)}. Raise it in More to continue.`); return; }
+    const todaySpent = txs.filter((t) => t.direction === "outgoing" && t.category !== "Savings" && new Date(t.createdAt).toDateString() === new Date().toDateString()).reduce((x, t) => x + t.amount, 0);
+    if (vault && vault.status === "active" && vault.poolRemaining > 0 && !guideWarn && todaySpent + amount > vault.drip) { setGuideWarn(true); return; }
     setStep("review");
   };
   const runCheck = async () => {
@@ -86,11 +90,12 @@ export default function MovePanel({ acct, onDone, txs, balance, onReceipt }: { a
       {looking && <p className="muted">Checking account…</p>}
       {name && <div className="found" role="status"><span>✓ {name}</span><span className="sim">Simulated name lookup</span></div>}
       {lookErr && <p className="muted" role="alert">{lookErr}</p>}
-      <input className="field" placeholder="Amount (₦)" inputMode="numeric" value={amt} onChange={(e) => setAmt(digits(e.target.value))} />
+      <input className="field" placeholder="Amount (₦)" inputMode="numeric" value={amt} onChange={(e) => { setAmt(digits(e.target.value)); setGuideWarn(false); }} />
       <input className="field" placeholder="Narration (optional)" maxLength={40} value={narr} onChange={(e) => setNarr(e.target.value)} />
       <button className="ghost" onClick={runCheck}>Check before sending</button>
       {check && <div className={check.level === "LOW" ? "panel" : "warn"} role="status"><strong>{check.level === "LOW" ? "Looks safe" : check.level === "MEDIUM" ? "Be careful" : "High risk. Do not send until you are sure."}</strong><p>{check.reason}</p><span className="sim">{check.by}</span></div>}
-      <button className="primary" onClick={next}>Continue</button>{sim}
+      {guideWarn && vault && <div className="warn" role="alert"><strong>This is more than today's vault allowance of {naira(vault.drip)}.</strong><ol className="steps"><li>Pay for essentials first, then wants.</li><li>Ask if this can wait for a later day's allowance.</li><li>Spending extra now leaves less for the remaining {vault.daysLeft} days.</li><li>You can still go ahead. It is your money and your call.</li></ol></div>}
+      <button className="primary" onClick={next}>{guideWarn ? "Continue anyway" : "Continue"}</button>{sim}
     </div>
     {msg && <p className="muted" role="status">{msg}</p>}
   </>);

@@ -9,7 +9,7 @@ export default function Privacy({ onLock, onReset }: { onLock: () => void; onRes
   const changePay = async () => { try { if (!(await checkPayPin(oldPay))) throw new Error("Current payment PIN is wrong."); await setPayPin(newPay); setOldPay(""); setNewPay(""); setMsg("Payment PIN changed."); } catch (e: any) { setMsg(e.message); } };
   const save = async () => { try { await setPin(pin); setHas(true); earn("pin_set"); setP(""); setMsg("PIN set. The app locks next time it opens."); } catch (e: any) { setMsg(e.message); } };
   const exportData = async () => {
-    const data = { exportedAt: new Date().toISOString(), balance: await provider.getBalance(), transactions: await provider.listTransactions(), goals: await provider.listGoals(), plan: await provider.getPlan(), weeklyLimit: await provider.getLimit() };
+    const data = { exportedAt: new Date().toISOString(), balance: await provider.getBalance(), transactions: await provider.listTransactions(), goals: await provider.listGoals(), plan: await provider.getPlan(), weeklyLimit: await provider.getLimit(), smoother: await provider.getSmoother(), vault: await provider.getVault() };
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
     a.download = "sbms-data.json"; a.click(); URL.revokeObjectURL(a.href); setMsg("Your data was downloaded.");

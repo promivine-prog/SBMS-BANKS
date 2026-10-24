@@ -1,4 +1,4 @@
-import type { BankingProvider, CardInfo, Goal, Plan, Recipient, Smoother, Tx } from "./types";
+import type { BankingProvider, CardInfo, Goal, Plan, Recipient, Smoother, Tx, Vault } from "./types";
 const wait = <T,>(v: T, ms = 350) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 const ago = (days: number, hour: number) => {
   const d = new Date(); d.setDate(d.getDate() - days); d.setHours(hour, 15, 0, 0); return d.toISOString();
@@ -39,6 +39,33 @@ function syncSmoother() {
   }
   if (s.releasedDays >= s.days) s.status = "completed";
 }
+let vault: Vault | null = null;
+const nextDay = (d: string) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + 1); return dayStr(x); };
+function vaultCalc(v: Vault) {
+  const t = dayStr();
+  v.daysLeft = t > v.endDay ? 0 : dayDiff(t, v.endDay) + 1;
+  v.drip = v.poolRemaining <= 0 ? 0 : v.daysLeft <= 1 ? v.poolRemaining : Math.floor(v.poolRemaining / v.daysLeft);
+}
+function vaultRelease(v: Vault, amt: number, day: string) {
+  v.poolRemaining -= amt;
+  seed.push({ id: "vd" + day, direction: "incoming", amount: amt, status: "completed", description: `Vault daily allowance, ${day}`, narrationType: "fund_bank", createdAt: day === dayStr() ? new Date().toISOString() : new Date(day + "T08:00:00").toISOString() });
+}
+// The "midnight drip", done as a catch-up by date: every day that has passed since the last release is released in order,
+// so it also works after the app was closed or offline. Each day's share is recalculated from what is left.
+function syncVault() {
+  const v = vault; if (!v) return;
+  if (v.status === "active") {
+    const t = dayStr(); let d = v.lastDripDay ? nextDay(v.lastDripDay) : t;
+    while (d <= t && v.poolRemaining > 0) {
+      if (d > v.endDay) { vaultRelease(v, v.poolRemaining, d); v.lastDripDay = d; break; }
+      const left = dayDiff(d, v.endDay) + 1, amt = left <= 1 ? v.poolRemaining : Math.floor(v.poolRemaining / left);
+      if (amt > 0) vaultRelease(v, amt, d);
+      v.lastDripDay = d; d = nextDay(d);
+    }
+    if (v.poolRemaining <= 0) v.status = "done";
+  }
+  vaultCalc(v);
+}
 async function spend(amount: number, description: string, narrationType: Tx["narrationType"], to?: Recipient, narration?: string, queued?: boolean): Promise<Tx> {
   if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
   if (amount > (await simulatedProvider.getBalance())) throw new Error("Not enough balance for this amount.");
@@ -52,11 +79,11 @@ async function spend(amount: number, description: string, narrationType: Tx["nar
 const base: BankingProvider = {
   simulated: true,
   async getBalance() {
-    syncSmoother();
+    syncSmoother(); syncVault();
     const net = seed.reduce((s, t) => s + (t.direction === "incoming" ? t.amount : -t.amount), 0);
     return wait(net + opening);
   },
-  listTransactions: () => { syncSmoother(); return wait([...seed].sort((a, b) => b.createdAt.localeCompare(a.createdAt))); },
+  listTransactions: () => { syncSmoother(); syncVault(); return wait([...seed].sort((a, b) => b.createdAt.localeCompare(a.createdAt))); },
   getDepositAccount: () => wait({ bank: "Sandbox Bank", number: "0123456789", name: "Bunch Dillon" }),
   getCard: () => wait(card),
   sendMoney: (to, amount, narration, queued) => spend(amount, `Sent to ${to.name}`, "send_to_friend", to, narration, queued),
@@ -86,7 +113,56 @@ const base: BankingProvider = {
     return { ...s };
   },
   async clearSmoother() { if (smoother && smoother.status !== "active") smoother = null; },
-  async reset() { seed.length = 0; goals.length = 0; opening = 0; weeklyLimit = 20000; plan = { essentials: 0, cash: 0, nextIncome: null, incomes: [] }; smoother = null; },
+  async getVault() { syncVault(); return vault ? { ...vault } : null; },
+  async setupVault(cfg) {
+    syncVault();
+    if (vault && vault.received > 0 && vault.status !== "done") throw new Error("You already have a vault holding money.");
+    if (!(cfg.tuition >= 0) || !(cfg.accommodation >= 0)) throw new Error("Fees cannot be negative.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cfg.startDay) || !/^\d{4}-\d{2}-\d{2}$/.test(cfg.endDay)) throw new Error("Choose the semester start and end dates.");
+    if (cfg.endDay < cfg.startDay) throw new Error("The end date must be after the start date.");
+    if (cfg.endDay < dayStr()) throw new Error("The semester end date has already passed.");
+    if (dayDiff(cfg.startDay, cfg.endDay) > 400) throw new Error("A semester cannot be longer than 400 days.");
+    const v: Vault = { ...cfg, received: 0, feesLocked: 0, feesStatus: "LOCKED", poolTotal: 0, poolRemaining: 0, lastDripDay: null, status: "ready", daysLeft: 0, drip: 0 };
+    vaultCalc(v); vault = v; return { ...v };
+  },
+  async receiveInflow(amount, narration, bulk) {
+    syncVault();
+    if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
+    const detected = /NELFUND|LOAN/i.test(narration) || bulk;
+    const now = new Date().toISOString();
+    if (detected && !vault) throw new Error("Set up your semester vault first.");
+    seed.push({ id: "vi" + Date.now(), direction: "incoming", amount, status: "completed", description: narration.trim() || "Incoming transfer", narrationType: "fund_bank", createdAt: now });
+    const v = vault;
+    if (!detected || !v) return { detected: false, vault: v ? { ...v } : null };
+    // Lock only the fees still missing, so a second inflow never locks the same fees twice.
+    const toFees = Math.min(amount, Math.max(0, v.tuition + v.accommodation - v.feesLocked)), toPool = amount - toFees;
+    v.received += amount; v.feesLocked += toFees; v.poolTotal += toPool; v.poolRemaining += toPool;
+    if (toFees > 0) seed.push({ id: "vf" + Date.now(), direction: "outgoing", amount: toFees, status: "completed", description: "Locked for school fees (vault)", narrationType: "send_to_friend", category: "Savings", createdAt: now });
+    if (toPool > 0) {
+      seed.push({ id: "vp" + Date.now(), direction: "outgoing", amount: toPool, status: "completed", description: "Moved to upkeep pool (vault)", narrationType: "send_to_friend", category: "Savings", createdAt: now });
+      v.status = "active";
+      const t = dayStr();
+      if (v.lastDripDay !== t) { // today's share arrives straight away
+        const left = t > v.endDay ? 1 : dayDiff(t, v.endDay) + 1, amt = left <= 1 ? v.poolRemaining : Math.floor(v.poolRemaining / left);
+        if (amt > 0) vaultRelease(v, amt, t);
+        v.lastDripDay = t;
+      }
+    }
+    syncVault();
+    return { detected: true, vault: { ...v } };
+  },
+  async payFees(reference) {
+    syncVault();
+    const v = vault; if (!v) throw new Error("Set up your semester vault first.");
+    if (v.feesStatus === "PAID") throw new Error("The fees are already marked as paid.");
+    if (v.tuition + v.accommodation <= 0 || v.feesLocked < v.tuition + v.accommodation) throw new Error("The full fee amount is not locked yet.");
+    if (!/^[A-Za-z0-9-]{6,24}$/.test(reference.trim())) throw new Error("Enter the invoice reference: 6 to 24 letters, numbers or dashes.");
+    // SIMULATED check. A real product would verify the invoice with the school or a licensed payment partner.
+    v.feesStatus = "PAID"; v.feesRef = reference.trim().toUpperCase(); v.feesPaidAt = new Date().toISOString();
+    return { ...v };
+  },
+  async clearVault() { syncVault(); if (vault && vault.status !== "done" && vault.received > 0) throw new Error("Your vault still holds money."); vault = null; },
+  async reset() { seed.length = 0; goals.length = 0; opening = 0; weeklyLimit = 20000; plan = { essentials: 0, cash: 0, nextIncome: null, incomes: [] }; smoother = null; vault = null; },
   getPlan: () => wait({ ...plan }, 150),
   async setPlan(p) { if (p.essentials < 0 || p.cash < 0) throw new Error("Amounts cannot be negative."); plan = { ...p }; },
   listGoals: () => wait(goals.map((g) => ({ ...g })), 200),
@@ -107,17 +183,17 @@ const base: BankingProvider = {
 
 // Offline support: the simulated data is saved on this device so it survives a reload.
 const SKEY = "sbms_sim_v1";
-function save() { try { localStorage.setItem(SKEY, JSON.stringify({ seed, goals, card, weeklyLimit, opening, plan, smoother })); } catch { /* storage unavailable */ } }
+function save() { try { localStorage.setItem(SKEY, JSON.stringify({ seed, goals, card, weeklyLimit, opening, plan, smoother, vault })); } catch { /* storage unavailable */ } }
 function loadSaved() {
   try {
     const raw = localStorage.getItem(SKEY); if (!raw) return;
     const s = JSON.parse(raw);
     seed.splice(0, seed.length, ...s.seed); goals.splice(0, goals.length, ...s.goals);
-    card = s.card; weeklyLimit = s.weeklyLimit; opening = s.opening; plan = s.plan; smoother = s.smoother ?? null;
+    card = s.card; weeklyLimit = s.weeklyLimit; opening = s.opening; plan = s.plan; smoother = s.smoother ?? null; vault = s.vault ?? null;
     seed.forEach((t) => { if (t.status === "pending" && !t.queued && Date.now() - +new Date(t.createdAt) > 4000) t.status = "completed"; });
   } catch { /* ignore unreadable saved data */ }
 }
-const MUTATORS = ["sendMoney", "withdraw", "contribute", "addGoal", "setLimit", "setPlan", "setCardStatus", "issueCard", "syncQueued", "startSmoother", "breakSmoother", "clearSmoother", "reset"] as const;
+const MUTATORS = ["sendMoney", "withdraw", "contribute", "addGoal", "setLimit", "setPlan", "setCardStatus", "issueCard", "syncQueued", "startSmoother", "breakSmoother", "clearSmoother", "setupVault", "receiveInflow", "payFees", "clearVault", "reset"] as const;
 export const simulatedProvider: BankingProvider = { ...base };
 for (const m of MUTATORS) { const f = (base as any)[m]; (simulatedProvider as any)[m] = async (...a: any[]) => { const r = await f(...a); save(); return r; }; }
 loadSaved();

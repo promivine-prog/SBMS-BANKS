@@ -14,7 +14,6 @@ export default function SmootherPanel({ onDone }: { onDone: () => void }) {
   const preview = Math.floor((+amt || 0) / (+days || 1));
   const released = s ? (s.releasedDays >= s.days ? s.total : s.daily * s.releasedDays) : 0;
   return (<>
-    <h2>Allowance Smoother</h2>
     <div className="panel">
       {!s || s.status !== "active" ? (<>
         {s && <p className="muted" role="status">{s.status === "completed" ? "Your last Smoother finished. Well done." : "Your last Smoother was broken early."}</p>}

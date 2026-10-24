@@ -3,7 +3,7 @@ import { provider, type Goal, type Tx } from "./provider";
 import Learn from "./Learn";
 import Simulator from "./Simulator";
 import { earn } from "./rank";
-import SmootherPanel from "./Smoother";
+import VaultHub from "./VaultHub";
 const naira = (n: number) => "₦" + n.toLocaleString("en-NG");
 export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void }) {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -27,7 +27,7 @@ export default function MoreTab({ txs, onDone }: { txs: Tx[]; onDone: () => void
       <div className="inline"><input className="field" placeholder="New weekly limit (₦)" inputMode="numeric" value={lim} onChange={(e) => setLim(e.target.value.replace(/\D/g, ""))} />
         <button className="primary" onClick={() => run(async () => { await provider.setLimit(+lim); earn("limit_set"); }, "Limit updated.")}>Set limit</button></div>{sim}
     </div>
-    <SmootherPanel onDone={onDone} />
+    <VaultHub onDone={onDone} />
     <h2>Savings goals</h2>
     {goals.map((g) => (
       <div className="panel" key={g.id}>

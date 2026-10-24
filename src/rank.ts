@@ -71,6 +71,7 @@ export const BADGES: { name: string; how: string; ok: (m: Me) => boolean }[] = [
   { name: "Locked in", how: "Set an app lock", ok: (m) => (m.counts.pin_set ?? 0) >= 1 },
   { name: "Limit setter", how: "Set a weekly limit", ok: (m) => (m.counts.limit_set ?? 0) >= 1 },
   { name: "Daily learner", how: "Read 7 daily tips", ok: (m) => (m.counts.daily_tip ?? 0) >= 7 },
+  { name: "Semester planner", how: "Set up a semester vault", ok: (m) => (m.counts.vault_setup ?? 0) >= 1 },
   { name: "Steady hand", how: "Finish an Allowance Smoother", ok: (m) => (m.counts.smoother_complete ?? 0) >= 1 },
 ];
 
