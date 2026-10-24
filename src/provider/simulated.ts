@@ -1,4 +1,4 @@
-import type { BankingProvider, CardInfo, Goal, Plan, Recipient, Smoother, Tx, Vault } from "./types";
+import type { BankingProvider, CardInfo, Goal, Plan, Bill, Recipient, Smoother, Tx, Vault } from "./types";
 const wait = <T,>(v: T, ms = 350) => new Promise<T>((r) => setTimeout(() => r(v), ms));
 const ago = (days: number, hour: number) => {
   const d = new Date(); d.setDate(d.getDate() - days); d.setHours(hour, 15, 0, 0); return d.toISOString();
@@ -40,6 +40,28 @@ function syncSmoother() {
   if (s.releasedDays >= s.days) s.status = "completed";
 }
 let vault: Vault | null = null;
+const FAR = "9999-99-99";
+const unpaidByDue = (v: Vault) => v.bills.filter((b) => !b.paid).sort((a, b) => (a.due ?? FAR).localeCompare(b.due ?? FAR));
+const billsNeed = (v: Vault) => v.bills.filter((b) => !b.paid).reduce((s, b) => s + (b.amount - b.locked), 0);
+const okDate = (d: unknown) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
+function cleanBill(b: { name: string; amount: number; due?: string | null }): Bill {
+  const name = String(b.name ?? "").trim();
+  if (!name || name.length > 30) throw new Error("Give the bill a name of up to 30 characters.");
+  if (!Number.isInteger(b.amount) || b.amount <= 0) throw new Error("The bill amount must be a whole number above ₦0.");
+  if (b.due && !okDate(b.due)) throw new Error("Choose a valid due date, or leave it empty.");
+  return { id: "b" + Date.now() + Math.floor(Math.random() * 1000), name, amount: b.amount, due: b.due || null, locked: 0, paid: false };
+}
+// Old saved vaults had two fixed fees. They are converted into a list of bills so nothing is lost.
+function migrateVault(v: any): Vault | null {
+  if (!v) return null;
+  if (Array.isArray(v.bills)) return { threshold: 0, ...v };
+  let left: number = v.feesLocked ?? 0; const bills: Bill[] = [];
+  for (const [name, amount] of [["Tuition", v.tuition ?? 0], ["Accommodation", v.accommodation ?? 0]] as [string, number][]) {
+    if (amount > 0) { const locked = Math.min(left, amount); left -= locked; bills.push({ id: "b" + bills.length, name, amount, due: null, locked, paid: v.feesStatus === "PAID", ref: v.feesRef, paidAt: v.feesPaidAt }); }
+  }
+  const { tuition, accommodation, feesLocked, feesStatus, feesRef, feesPaidAt, ...rest } = v;
+  return { ...rest, bills, threshold: 0 } as Vault;
+}
 const nextDay = (d: string) => { const x = new Date(d + "T00:00:00"); x.setDate(x.getDate() + 1); return dayStr(x); };
 function vaultCalc(v: Vault) {
   const t = dayStr();
@@ -117,51 +139,77 @@ const base: BankingProvider = {
   async setupVault(cfg) {
     syncVault();
     if (vault && vault.received > 0 && vault.status !== "done") throw new Error("You already have a vault holding money.");
-    if (!(cfg.tuition >= 0) || !(cfg.accommodation >= 0)) throw new Error("Fees cannot be negative.");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(cfg.startDay) || !/^\d{4}-\d{2}-\d{2}$/.test(cfg.endDay)) throw new Error("Choose the semester start and end dates.");
+    if (!okDate(cfg.startDay) || !okDate(cfg.endDay)) throw new Error("Choose the semester start and end dates.");
     if (cfg.endDay < cfg.startDay) throw new Error("The end date must be after the start date.");
     if (cfg.endDay < dayStr()) throw new Error("The semester end date has already passed.");
     if (dayDiff(cfg.startDay, cfg.endDay) > 400) throw new Error("A semester cannot be longer than 400 days.");
-    const v: Vault = { ...cfg, received: 0, feesLocked: 0, feesStatus: "LOCKED", poolTotal: 0, poolRemaining: 0, lastDripDay: null, status: "ready", daysLeft: 0, drip: 0 };
+    if (cfg.bills.length > 12) throw new Error("Add at most 12 bills.");
+    if (!Number.isInteger(cfg.threshold) || cfg.threshold < 0) throw new Error("The big deposit amount must be 0 or more.");
+    const v: Vault = { bills: cfg.bills.map(cleanBill), threshold: cfg.threshold, startDay: cfg.startDay, endDay: cfg.endDay, received: 0, poolTotal: 0, poolRemaining: 0, lastDripDay: null, status: "ready", daysLeft: 0, drip: 0 };
     vaultCalc(v); vault = v; return { ...v };
+  },
+  async addBill(bill) {
+    syncVault(); const v = vault; if (!v) throw new Error("Set up your semester vault first.");
+    if (v.status === "done") throw new Error("This semester has finished.");
+    if (v.bills.length >= 12) throw new Error("Add at most 12 bills.");
+    v.bills.push(cleanBill(bill)); return { ...v };
+  },
+  async removeBill(id) {
+    syncVault(); const v = vault; if (!v) throw new Error("Set up your semester vault first.");
+    const b = v.bills.find((x) => x.id === id); if (!b) throw new Error("Bill not found.");
+    if (b.locked > 0) throw new Error("This bill already holds locked money. Pay it with an invoice reference first.");
+    v.bills = v.bills.filter((x) => x.id !== id); return { ...v };
+  },
+  async payBill(id, reference) {
+    syncVault(); const v = vault; if (!v) throw new Error("Set up your semester vault first.");
+    const b = v.bills.find((x) => x.id === id); if (!b) throw new Error("Bill not found.");
+    if (b.paid) throw new Error("This bill is already marked as paid.");
+    if (b.locked < b.amount) throw new Error("The full amount is not locked yet.");
+    if (!/^[A-Za-z0-9-]{6,24}$/.test(reference.trim())) throw new Error("Enter the invoice reference: 6 to 24 letters, numbers or dashes.");
+    // SIMULATED check. A real product would verify the invoice with the school or a licensed payment partner.
+    b.paid = true; b.ref = reference.trim().toUpperCase(); b.paidAt = new Date().toISOString();
+    return { ...v };
+  },
+  async setThreshold(threshold) {
+    syncVault(); const v = vault; if (!v) throw new Error("Set up your semester vault first.");
+    if (!Number.isInteger(threshold) || threshold < 0) throw new Error("The big deposit amount must be 0 or more.");
+    v.threshold = threshold; return { ...v };
   },
   async receiveInflow(amount, narration, bulk) {
     syncVault();
     if (!(amount > 0)) throw new Error("Enter an amount above ₦0.");
-    const detected = /NELFUND|LOAN/i.test(narration) || bulk;
+    const v0 = vault;
+    const reason = /NELFUND|LOAN/i.test(narration) ? "keyword" : v0 && v0.threshold > 0 && amount >= v0.threshold ? "threshold" : bulk ? "manual" : null;
     const now = new Date().toISOString();
-    if (detected && !vault) throw new Error("Set up your semester vault first.");
+    if (reason && !v0) throw new Error("Set up your semester vault first.");
     seed.push({ id: "vi" + Date.now(), direction: "incoming", amount, status: "completed", description: narration.trim() || "Incoming transfer", narrationType: "fund_bank", createdAt: now });
     const v = vault;
-    if (!detected || !v) return { detected: false, vault: v ? { ...v } : null };
-    // Lock only the fees still missing, so a second inflow never locks the same fees twice.
-    const toFees = Math.min(amount, Math.max(0, v.tuition + v.accommodation - v.feesLocked)), toPool = amount - toFees;
-    v.received += amount; v.feesLocked += toFees; v.poolTotal += toPool; v.poolRemaining += toPool;
-    if (toFees > 0) seed.push({ id: "vf" + Date.now(), direction: "outgoing", amount: toFees, status: "completed", description: "Locked for school fees (vault)", narrationType: "send_to_friend", category: "Savings", createdAt: now });
+    if (!reason || !v) return { detected: false, reason: null, vault: v ? { ...v } : null };
+    // Fill the bills in due-date order, locking only what each one still needs, so a second arrival never locks the same bill twice.
+    let left = amount, toFees = 0;
+    for (const b of unpaidByDue(v)) { const x = Math.min(b.amount - b.locked, left); if (x > 0) { b.locked += x; left -= x; toFees += x; } }
+    const toPool = left;
+    v.received += amount; v.poolTotal += toPool; v.poolRemaining += toPool;
+    if (toFees > 0) seed.push({ id: "vf" + Date.now(), direction: "outgoing", amount: toFees, status: "completed", description: "Locked for bills (vault)", narrationType: "send_to_friend", category: "Savings", createdAt: now });
     if (toPool > 0) {
       seed.push({ id: "vp" + Date.now(), direction: "outgoing", amount: toPool, status: "completed", description: "Moved to upkeep pool (vault)", narrationType: "send_to_friend", category: "Savings", createdAt: now });
       v.status = "active";
       const t = dayStr();
       if (v.lastDripDay !== t) { // today's share arrives straight away
-        const left = t > v.endDay ? 1 : dayDiff(t, v.endDay) + 1, amt = left <= 1 ? v.poolRemaining : Math.floor(v.poolRemaining / left);
+        const days = t > v.endDay ? 1 : dayDiff(t, v.endDay) + 1, amt = days <= 1 ? v.poolRemaining : Math.floor(v.poolRemaining / days);
         if (amt > 0) vaultRelease(v, amt, t);
         v.lastDripDay = t;
       }
     }
     syncVault();
-    return { detected: true, vault: { ...v } };
+    return { detected: true, reason, vault: { ...v } };
   },
-  async payFees(reference) {
+  async clearVault() {
     syncVault();
-    const v = vault; if (!v) throw new Error("Set up your semester vault first.");
-    if (v.feesStatus === "PAID") throw new Error("The fees are already marked as paid.");
-    if (v.tuition + v.accommodation <= 0 || v.feesLocked < v.tuition + v.accommodation) throw new Error("The full fee amount is not locked yet.");
-    if (!/^[A-Za-z0-9-]{6,24}$/.test(reference.trim())) throw new Error("Enter the invoice reference: 6 to 24 letters, numbers or dashes.");
-    // SIMULATED check. A real product would verify the invoice with the school or a licensed payment partner.
-    v.feesStatus = "PAID"; v.feesRef = reference.trim().toUpperCase(); v.feesPaidAt = new Date().toISOString();
-    return { ...v };
+    if (vault && vault.status !== "done" && vault.received > 0) throw new Error("Your vault still holds money.");
+    if (vault && vault.bills.some((b) => !b.paid && b.locked > 0)) throw new Error("Pay your locked bills with an invoice reference first.");
+    vault = null;
   },
-  async clearVault() { syncVault(); if (vault && vault.status !== "done" && vault.received > 0) throw new Error("Your vault still holds money."); vault = null; },
   async reset() { seed.length = 0; goals.length = 0; opening = 0; weeklyLimit = 20000; plan = { essentials: 0, cash: 0, nextIncome: null, incomes: [] }; smoother = null; vault = null; },
   getPlan: () => wait({ ...plan }, 150),
   async setPlan(p) { if (p.essentials < 0 || p.cash < 0) throw new Error("Amounts cannot be negative."); plan = { ...p }; },
@@ -189,11 +237,11 @@ function loadSaved() {
     const raw = localStorage.getItem(SKEY); if (!raw) return;
     const s = JSON.parse(raw);
     seed.splice(0, seed.length, ...s.seed); goals.splice(0, goals.length, ...s.goals);
-    card = s.card; weeklyLimit = s.weeklyLimit; opening = s.opening; plan = s.plan; smoother = s.smoother ?? null; vault = s.vault ?? null;
+    card = s.card; weeklyLimit = s.weeklyLimit; opening = s.opening; plan = s.plan; smoother = s.smoother ?? null; vault = migrateVault(s.vault);
     seed.forEach((t) => { if (t.status === "pending" && !t.queued && Date.now() - +new Date(t.createdAt) > 4000) t.status = "completed"; });
   } catch { /* ignore unreadable saved data */ }
 }
-const MUTATORS = ["sendMoney", "withdraw", "contribute", "addGoal", "setLimit", "setPlan", "setCardStatus", "issueCard", "syncQueued", "startSmoother", "breakSmoother", "clearSmoother", "setupVault", "receiveInflow", "payFees", "clearVault", "reset"] as const;
+const MUTATORS = ["sendMoney", "withdraw", "contribute", "addGoal", "setLimit", "setPlan", "setCardStatus", "issueCard", "syncQueued", "startSmoother", "breakSmoother", "clearSmoother", "setupVault", "addBill", "removeBill", "payBill", "setThreshold", "receiveInflow", "clearVault", "reset"] as const;
 export const simulatedProvider: BankingProvider = { ...base };
 for (const m of MUTATORS) { const f = (base as any)[m]; (simulatedProvider as any)[m] = async (...a: any[]) => { const r = await f(...a); save(); return r; }; }
 loadSaved();

@@ -18,10 +18,10 @@ export interface Income { id: string; name: string; amount: number; date: string
 export interface Plan { essentials: number; cash: number; nextIncome: string | null; incomes: Income[] }
 export interface Recipient { name: string; account: string; bank: string }
 export interface Smoother { total: number; days: number; daily: number; releasedDays: number; startDay: string; status: "active" | "completed" | "broken" }
+export interface Bill { id: string; name: string; amount: number; due: string | null; locked: number; paid: boolean; ref?: string; paidAt?: string }
 export interface Vault {
-  tuition: number; accommodation: number; startDay: string; endDay: string;
-  received: number; feesLocked: number; feesStatus: "LOCKED" | "PAID"; feesRef?: string; feesPaidAt?: string;
-  poolTotal: number; poolRemaining: number; lastDripDay: string | null;
+  bills: Bill[]; threshold: number; startDay: string; endDay: string;
+  received: number; poolTotal: number; poolRemaining: number; lastDripDay: string | null;
   status: "ready" | "active" | "done"; daysLeft: number; drip: number;
 }
 export interface CardInfo { id: string; name: string; last4: string; number: string; expiry: string; cvv: string; status: "ACTIVE" | "BLOCKED" }
@@ -50,8 +50,11 @@ export interface BankingProvider {
   breakSmoother(): Promise<Smoother>;
   clearSmoother(): Promise<void>;
   getVault(): Promise<Vault | null>;
-  setupVault(cfg: { tuition: number; accommodation: number; startDay: string; endDay: string }): Promise<Vault>;
-  receiveInflow(amount: number, narration: string, bulk: boolean): Promise<{ detected: boolean; vault: Vault | null }>;
-  payFees(reference: string): Promise<Vault>;
+  setupVault(cfg: { bills: { name: string; amount: number; due?: string | null }[]; threshold: number; startDay: string; endDay: string }): Promise<Vault>;
+  addBill(bill: { name: string; amount: number; due?: string | null }): Promise<Vault>;
+  removeBill(id: string): Promise<Vault>;
+  payBill(id: string, reference: string): Promise<Vault>;
+  setThreshold(threshold: number): Promise<Vault>;
+  receiveInflow(amount: number, narration: string, bulk: boolean): Promise<{ detected: boolean; reason: "keyword" | "threshold" | "manual" | null; vault: Vault | null }>;
   clearVault(): Promise<void>;
 }
